@@ -12,6 +12,22 @@ enum class Container : int { TUBE_0 = 0,
 enum class Pump : int { INFLOW = 0,
                         OUTFLOW = 1 };
 
+struct Output {
+  Output(int pin, String name) {
+    this->pin = pin;
+    this->name = name;
+  }
+  int pin = -1;
+  String name = "unset";
+};
+
+namespace resources {
+  static const auto TUBE0_IN = Output{ 3, "Tube0_inflow" };
+  static const auto TUBE0_OUT = Output{ 3, "Tube0_outflow" };
+  static const auto TUBE1_IN = Output{ 3, "Tube1_inflow" };
+  static const auto TUBE1_OUT = Output{ 3, "Tube1_outflow" };
+  static const auto STREAM_OUT = Output{ 3, "Stream_outflow" };
+}
 class Claire {
 public:
   bool DEBUG = true;
@@ -23,7 +39,7 @@ public:
   // Takes pump to actuate and the duty in percentage [0..100].
   // Expect lower PWM frequency as duty decreases to cope with stalling of pump;
   // e.g. duty of 5% might result in 5 seconds on and 95 seconds off.
-  bool setPump(Container container, Pump pump, int duty);
+  bool setPump(const Output &output, int duty);
   int getPumpPin(Container container, Pump pump);
   void loadEEPROMCalibration();
 

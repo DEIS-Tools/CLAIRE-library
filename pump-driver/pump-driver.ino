@@ -1,15 +1,23 @@
 #include "claire.h"
 
+using namespace resources;
+
 Claire claire = Claire();
 
 void setup() {
   // set debug
   claire.DEBUG = true;
-
+  
+  // setup 9600 baud
   Serial.begin(9600);
 
   claire.begin();  
 }
+
+void loop() {
+  claire.setPump(TUBE0_IN, getDuty());
+}
+
 
 int getDuty() {
   // command read from serial
@@ -32,8 +40,4 @@ int getDuty() {
     }
   }
   return cmd;
-}
-
-void loop() {
-  claire.setPump(Container::TUBE_0, Pump::INFLOW, getDuty());
 }
