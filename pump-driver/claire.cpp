@@ -1,54 +1,57 @@
 #include "claire.h"
 
 
+Claire::Claire(Output *pumpDefinitions, int size) {
+  defineNewPumps(pumpDefinitions, size);
+  begin();
+}
 
-// Initialise system
+// Initialise system with default pump configuration
 bool Claire::begin() {
-  Serial.println("Initialising CLAIRE water management...");
-  
+  Serial.println("Initialising CLAIRE water management");
+
   pinMode(LED_BUILTIN, OUTPUT);
   int ok = true;
   digitalWrite(LED_BUILTIN, !ok);
-  // check that none of the assigned pins are of sentinel value
-  for (int c = 0; c < Claire::containerCount; c++) {
-    for (int p = 0; p < Claire::pumpCount; p++) {
-      if (_pumpPins[c][p] == -1) {
-        if (ok) {
-          // on first error, print legend
-          Serial.println("Indicies. Containers: 0: Tube0, 1: Tube1, 2: Stream-res. Pumps 0: Inflow, 1: outflow.");
-        }
-        Serial.println("ERROR: Pump PWM pin unset for resource: C" + String(c) + "_P" + String(p));
-        ok = false;
-      } else {
-        // set given pin as output
-        pinMode(_pumpPins[c][p], OUTPUT);
+  // check that none of the assigned pins are of sentinel value nor share a pin
+  for (int i = 0; i < pumpCount; i++) {
+    if (pumps[i].pin == -1) {
+      if (ok) {
+        // on first error, print legend FIXME
+        Serial.println("Indicies. Containers: 0: Tube0, 1: Tube1, 2: Stream-res. Pumps 0: Inflow, 1: outflow.");
       }
-      digitalWrite(LED_BUILTIN, !ok);
+      Serial.println("ERROR: Pump PWM pin unset for resource: " + String(pumps[i].name) + " pin: " + String(pumps[i].pin));
+      ok = false;
+    } else {
+      // set given pin as output
+      pinMode(pumps[i].pin, OUTPUT);
     }
+    digitalWrite(LED_BUILTIN, !ok);
   }
   return ok;
 }
 
-void Claire::assignPumpPin(Container container, Pump pump, int new_pin) {
-  // unset pinMode if defined
-  int prev_pin = _pumpPins[int(container)][int(pump)];
-  
-  if (prev_pin > 0) {
-    // pin is valid, unset by making input
-    pinMode(prev_pin, INPUT);
-  } else {
-    Serial.println("Previous pin: " + String(prev_pin) + " was not a valid");
-  }
-  
-  // set given pin
-  _pumpPins[int(container)][int(pump)] = new_pin;
-
-  pinMode(new_pin, OUTPUT);
+bool Claire::check() {
+  // do check on pins (no sentinel, no duplicate, no OOB for given platform)
+  return true;
 }
 
-int Claire::getPumpPin(Container container, Pump pump) {
-  // lookup DAC pin mapping
-  return _pumpPins[int(container)][int(pump)];
+void Claire::defineNewPumps(Output *newPumps, int sizeNew) {
+  // disable pinMode on current pumps
+  for (int i = 0; i < pumpCount; i++) {
+    pinMode(pumps[i].pin, INPUT);
+  }
+
+  // set new pumps
+  pumps = newPumps;
+  pumpCount = sizeNew;
+
+  int ok = check();
+
+  // enable pinMode for new pumps
+  for (int i = 0; i < pumpCount; i++) {
+    pinMode(pumps[i].pin, OUTPUT);
+  }
 }
 
 // Takes pump to actuate and the duty in percentage [0..100].
@@ -75,8 +78,9 @@ bool Claire::setPump(const Output &output, int duty) {
   return true;
 }
 
+
 void Claire::loadEEPROMCalibration() {
-    // eeprom test
+  // eeprom test
   Serial.println("EEPROM: " + String(EEPROM.read(0)));
   EEPROM.write(0, 42);
   Serial.println("EEPROM: " + String(EEPROM.read(0)));

@@ -1,21 +1,37 @@
 #include "claire.h"
 
-using namespace resources;
+using namespace default_pump_defs;
+
+/*
+static Output custom_def[5] = {
+  default_pump_defs::TUBE0_IN,
+  default_pump_defs::TUBE0_OUT,
+  default_pump_defs::TUBE1_IN,
+  default_pump_defs::TUBE1_OUT,
+  default_pump_defs::STREAM_OUT
+};
+int custom_def_size = 5;
+
+Claire claire = Claire(custom_def, custom_def_size);
+*/
 
 Claire claire = Claire();
-
 void setup() {
   // set debug
   claire.DEBUG = true;
-  
+
   // setup 9600 baud
   Serial.begin(9600);
 
-  claire.begin();  
+
+
+
+  claire.begin();
 }
 
 void loop() {
-  claire.setPump(TUBE0_IN, getDuty());
+  int ok = claire.setPump(TUBE0_IN, getDuty());
+  digitalWrite(LED_BUILTIN, !ok);
 }
 
 
