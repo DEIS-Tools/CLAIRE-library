@@ -1,0 +1,15 @@
+# Syntax Coloring for Claire
+
+# Datatypes (KEYWORD1)
+
+# Methods and Functions (KEYWORD2)
+
+# Instances (KEYWORD2)
+
+# Constants (LITERAL1)
+TUBE0_IN LITERAL1
+TUBE0_OUT LITERAL1
+TUBE1_IN LITERAL1
+TUBE1_OUT LITERAL1
+STREAM_IN LITERAL1
+STREAM_OUT LITERAL1

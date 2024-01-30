@@ -1,4 +1,4 @@
-#include "claire.h"
+#include "Claire.h"
 
 
 Claire::Claire(Output *pumpDefinitions, int size) {
