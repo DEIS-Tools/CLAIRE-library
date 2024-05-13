@@ -3,10 +3,7 @@ This repo holds the source code for the Arduino Library implemented for use by s
 The environment fills the basins, and the goal is to maximise the level in the tubes to increase sedimentation before discharging the water for later water-works, while minimising the risk of an overflow.
 The controller knows the forecast, the level of the basin(s), and can choose to discharge some amount.
 
-To model this, each tube has an inflow- and outflow-pump along with an ultrasonic sensor to measure with mm-precision the height of the water column.
-
-Below is the CAD model of the first version.
-![CAD model of CLAIRE demonstrator v1](figures/cad-v1.png)
+To model this, each tube has an inflow- and outflow-pump along with an ultrasonic sensor to measure with mm-precision the height of the water column. This is exposed with an interface to the user for control.
 
 ## Usage
 Install the library from the Arduino Library Manager by searching for 'CLAIRE'.
@@ -49,3 +46,6 @@ void loop() {
   delay(5000);
 }
 ```
+
+## CAD model
+![CAD model of CLAIRE demonstrator v1](figures/cad-v1.png)
