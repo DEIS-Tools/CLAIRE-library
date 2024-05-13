@@ -22,6 +22,8 @@ void loop() {
   Serial.println(claire.getRange(TUBE0_HEIGHT));
   ok = claire.setPump(TUBE0_OUT, getDuty());
   digitalWrite(LED_BUILTIN, !ok);
+  bool f = true;
+  f &= false;
 }
 
 // read a duty from serial to actuate on demonstrator
