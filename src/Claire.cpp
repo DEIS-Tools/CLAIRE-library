@@ -1,6 +1,5 @@
 #include "Claire.h"
 
-
 Claire::Claire(Output *pumpDefinitions, int size) {
   defineNewPumps(pumpDefinitions, size);
   begin();
@@ -8,7 +7,7 @@ Claire::Claire(Output *pumpDefinitions, int size) {
 
 // Initialise system with default pump configuration
 bool Claire::begin() {
-  Serial.println("Initialising CLAIRE water management");
+  Serial.println(String("Initialising CLAIRE water management v") + VERSION);
 
   pinMode(LED_BUILTIN, OUTPUT);
   int ok = true;
@@ -19,15 +18,33 @@ bool Claire::begin() {
       if (ok) {
         // on first error, print legend FIXME
         Serial.println("Indicies. Containers: 0: Tube0, 1: Tube1, 2: Stream-res. Pumps 0: Inflow, 1: outflow.");
-      }
+      }   
       Serial.println("ERROR: Pump PWM pin unset for resource: " + String(pumps[i].name) + " pin: " + String(pumps[i].pin));
       ok = false;
     } else {
       // set given pin as output
       pinMode(pumps[i].pin, OUTPUT);
     }
+    
+
     digitalWrite(LED_BUILTIN, !ok);
   }
+
+  for (int i = 0; i < sensorCount; i++) {
+    if (sensors[i].pin == -1) {
+      Serial.println("ERROR: Sensor PWM pin unset for resource: " + String(sensors[i].name) + " pin: " + String(sensors[i].pin));
+    } else {
+      pinMode(sensors[i].pin, INPUT);
+    }
+
+  }
+  
+  // todo: fixup def and binding of solenoids to pumps
+  pinMode(8, OUTPUT);
+  pinMode(9, OUTPUT);
+  digitalWrite(8, LOW);
+  digitalWrite(9, LOW);
+  
   return ok;
 }
 
@@ -54,6 +71,66 @@ void Claire::defineNewPumps(Output *newPumps, int sizeNew) {
   }
 }
 
+
+float filter_samples(int readings[]) {
+  int filteredValues[SENSOR_SAMPLE_SIZE];
+  float raw_avg = 0; 
+  int filtered_avg = 0;
+
+  for (int i = 0; i < SENSOR_SAMPLE_SIZE; i++) {
+    raw_avg += readings[i];
+  }
+  raw_avg = raw_avg / SENSOR_SAMPLE_SIZE;
+
+  int j = 0;
+  for (int i = 0; i < SENSOR_SAMPLE_SIZE; i++) {
+    // discard outliers
+    if (abs(readings[i] - raw_avg) < SENSOR_OUTLIER_THRESHOLD) {
+      filteredValues[j] = readings[i];
+      j++;
+    }
+  }
+
+  for (int i = 0; i <= j; i++) {
+    filtered_avg += filteredValues[i];
+  }
+  filtered_avg =  filtered_avg / 10;
+
+
+  // fixme: add debug from local Claire object scope
+  if (true &&raw_avg != filtered_avg) {
+    Serial.println("Outliers detected");
+  }
+
+  return filtered_avg; 
+}
+
+int Claire::getRange(const Sensor &sensor) {
+  int samples[SENSOR_SAMPLE_SIZE];
+
+  for (int i = 0; i < SENSOR_SAMPLE_SIZE; i++) {
+    int res = pulseIn(sensor.pin, HIGH);
+    while (res == 0 || res > 1000) {
+      res = pulseIn(sensor.pin, HIGH);
+    }
+    samples[i] = res;
+  }
+  if (DEBUG) {
+    Serial.print("range (" + sensor.name + "):");
+    for (int elem : samples) {
+      Serial.print(String(elem) + ", ");
+    }
+    Serial.println();
+  }
+
+  float res = filter_samples(samples);
+
+  return (int) res;
+
+}
+
+
+
 // Takes pump to actuate and the duty in percentage [0..100].
 // Expect lower PWM frequency as duty decreases to cope with stalling of pump;
 // e.g. duty of 5% might result in 5 seconds on and 95 seconds off.
@@ -70,6 +147,18 @@ bool Claire::setPump(const Output &output, int duty) {
 
   // write PWM signal to pin
   analogWrite(output.pin, duty_byte);
+
+  // if inflow, put respective solenoid high
+  if (output.pin == 3 && duty > 0) {
+    digitalWrite(8, HIGH);
+  } else if (output.pin == 3 && duty == 0) {
+    digitalWrite(8, LOW);
+  }
+  if (output.pin == 5 && duty > 0) {
+    digitalWrite(9, HIGH);
+  } else if (output.pin == 5 && duty == 0) {
+    digitalWrite(9, LOW);
+  }
 
   if (DEBUG) {
     Serial.println("Set " + output.name + " to " + String(duty) + "%");

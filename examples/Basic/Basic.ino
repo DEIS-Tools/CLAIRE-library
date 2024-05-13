@@ -1,40 +1,30 @@
-#include "claire.h"
+#include "Claire.h"
 
+// use default definitions of pumps and sensors of reference physical implementation
 using namespace default_pump_defs;
+using namespace default_sensor_defs;
 
-/*
-static Output custom_def[5] = {
-  default_pump_defs::TUBE0_IN,
-  default_pump_defs::TUBE0_OUT,
-  default_pump_defs::TUBE1_IN,
-  default_pump_defs::TUBE1_OUT,
-  default_pump_defs::STREAM_OUT
-};
-int custom_def_size = 5;
-
-Claire claire = Claire(custom_def, custom_def_size);
-*/
 
 Claire claire = Claire();
 void setup() {
-  // set debug
+  // set debug to be verbose in output
   claire.DEBUG = true;
 
-  // setup 9600 baud
+  // setup 9600 baud for serial connection
   Serial.begin(9600);
-
-
-
 
   claire.begin();
 }
 
 void loop() {
+  Serial.println(claire.getRange(TUBE0_HEIGHT));
   int ok = claire.setPump(TUBE0_IN, getDuty());
+  Serial.println(claire.getRange(TUBE0_HEIGHT));
+  ok = claire.setPump(TUBE0_OUT, getDuty());
   digitalWrite(LED_BUILTIN, !ok);
 }
 
-
+// read a duty from serial to actuate on demonstrator
 int getDuty() {
   // command read from serial
   int cmd = -1;
@@ -43,6 +33,7 @@ int getDuty() {
   Serial.println("> ");
   while (Serial.available() == 0) {}
   cmd = Serial.parseInt();
+
   while (Serial.available() > 0) {  // Flush the buffer
     Serial.read();
   }
