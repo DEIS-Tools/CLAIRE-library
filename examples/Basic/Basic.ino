@@ -19,15 +19,19 @@ void setup() {
 
 void loop() {
   Serial.println(claire.getRange(TUBE0_HEIGHT));
+  Serial.println("Set duty TUBE0_IN:");
   int ok = claire.setPump(TUBE0_IN, getDuty());
   
   Serial.println(claire.getRange(TUBE0_HEIGHT));
+  Serial.println("Set duty TUBE0_OUT:");
   ok = claire.setPump(TUBE0_OUT, getDuty());
 
   Serial.println(claire.getRange(TUBE1_HEIGHT));
+  Serial.println("Set duty TUBE1_IN:");
   ok = claire.setPump(TUBE1_IN, getDuty());
 
   Serial.println(claire.getRange(TUBE1_HEIGHT));
+  Serial.println("Set duty TUBE1_OUT:");
   ok = claire.setPump(TUBE1_OUT, getDuty());
 
   digitalWrite(LED_BUILTIN, !ok);

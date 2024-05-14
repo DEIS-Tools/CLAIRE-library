@@ -42,9 +42,9 @@ struct Sensor {
 namespace default_pump_defs {
 static Output TUBE0_IN { 2, "Tube0_inflow", 0, true };
 static Output TUBE0_OUT { 3, "Tube0_outflow", 0, false };
-static Output TUBE1_IN { 7, "Tube1_inflow", 1, true }; //fixme: chan. 3 on driver-board seems wonky, switched to unused chan.
+static Output TUBE1_IN { 6, "Tube1_inflow", 1, true }; //fixme: chan. 3 on driver-board seems wonky, switched to unused chan.
 static Output TUBE1_OUT { 5, "Tube1_outflow", 1, false };
-static Output STREAM_OUT { 6, "Stream_outflow", -1, false };
+static Output STREAM_OUT { 7, "Stream_outflow", -1, false };
 }
 
 static Output** default_pumps = new Output*[5] {
