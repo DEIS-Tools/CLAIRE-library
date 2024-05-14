@@ -9,6 +9,7 @@ Claire claire = Claire();
 void setup() {
   // set debug to be verbose in output
   claire.DEBUG = true;
+  claire.VERBOSE = false;
 
   // setup 9600 baud for serial connection
   Serial.begin(9600);
@@ -19,11 +20,17 @@ void setup() {
 void loop() {
   Serial.println(claire.getRange(TUBE0_HEIGHT));
   int ok = claire.setPump(TUBE0_IN, getDuty());
+  
   Serial.println(claire.getRange(TUBE0_HEIGHT));
   ok = claire.setPump(TUBE0_OUT, getDuty());
+
+  Serial.println(claire.getRange(TUBE1_HEIGHT));
+  ok = claire.setPump(TUBE1_IN, getDuty());
+
+  Serial.println(claire.getRange(TUBE1_HEIGHT));
+  ok = claire.setPump(TUBE1_OUT, getDuty());
+
   digitalWrite(LED_BUILTIN, !ok);
-  bool f = true;
-  f &= false;
 }
 
 // read a duty from serial to actuate on demonstrator
