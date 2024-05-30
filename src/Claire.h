@@ -4,7 +4,7 @@
 #include <Arduino.h>
 #include <EEPROM.h>
 
-#define VERSION "0.1.4"
+#define VERSION "0.1.5"
 
 #define SENSOR_SAMPLE_SIZE 5
 #define SENSOR_MIN_VALUE 0
@@ -47,7 +47,8 @@ static Output TUBE1_OUT { 5, "Tube1_outflow", 1, false };
 static Output STREAM_OUT { 7, "Stream_outflow", -1, false };
 }
 
-static Output** default_pumps = new Output*[5] {
+const int PUMP_COUNT = 5;
+static Output** default_pumps = new Output*[PUMP_COUNT] {
   &default_pump_defs::TUBE0_IN,
   &default_pump_defs::TUBE0_OUT,
   &default_pump_defs::TUBE1_IN,
@@ -82,7 +83,7 @@ public:
   void loadEEPROMCalibration();
   void defineNewPumps(Output *newPumps, int sizeNew);
   Output **pumps = default_pumps;
-  int pumpCount = sizeof(default_pumps) / sizeof(default_pumps[0]);
+  int pumpCount = PUMP_COUNT; 
   Sensor *sensors = &default_sensors[0];
   int sensorCount = 2;
 private:
