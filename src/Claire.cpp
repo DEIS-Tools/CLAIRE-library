@@ -110,20 +110,18 @@ float filter_samples(int readings[]) {
   return filtered_avg; 
 }
 
-int Claire::getRange(const Sensor &sensor) {
-  int samples[SENSOR_SAMPLE_SIZE];
-
+void Claire::getRangeImpl(const Sensor &sensor) {
   // if duty for inflow, for given tube is positive; remember duty, turn off for epsilon, then reset duty
-  
   int conflicting_pump_old_duty = -1;
   Output *conflicting_pump;
 
   if (DEBUG && VERBOSE) {
     Serial.println("Checking for pump conflicting with ranging");
   }
+  
   for (int i = 0; i < pumpCount; i++) {
     if (DEBUG && VERBOSE) {
-      Serial.print(String(pumps[i]->name) + ", pin: " + String(pumps[i]->pin) + ", inflow: " + String(pumps[i]->inflow) + ", duty:" + String(pumps[i]->duty));
+      Serial.println("\t" + String(pumps[i]->name) + ", pin: " + String(pumps[i]->pin) + ", inflow: " + String(pumps[i]->inflow) + ", duty:" + String(pumps[i]->duty));
     }
     if (pumps[i]->tube == sensor.tube && pumps[i]->inflow && pumps[i]->duty > 0) {
       if (DEBUG && VERBOSE) {
@@ -137,35 +135,34 @@ int Claire::getRange(const Sensor &sensor) {
       break;
     }
   }
-  // delay shortly to settle water in tube before sampling
-  delay(100);
-
-  // sample 
-  for (int i = 0; i < SENSOR_SAMPLE_SIZE; i++) {
-    int res = pulseIn(sensor.pin, HIGH);
-    while (res == 0 || res > 1000) {
-      res = pulseIn(sensor.pin, HIGH);
-    }
-    samples[i] = res;
+  if (conflicting_pump_old_duty == -1 && DEBUG && VERBOSE) {
+    Serial.println("No conflict found");
   }
 
-  float res = filter_samples(samples);
+  // delay shortly to settle water in tube before sampling
+  delay(SENSOR_WATER_SETTLE_TIMEOUT);
 
-  if (DEBUG) {
+  // do sampling
+  for (int i = 0; i < SENSOR_SAMPLE_SIZE; i++) {
+    sensorReadingTemp.samples[i] = pulseIn(sensor.pin, HIGH);
+    if (sensorReadingTemp.samples[i] == 0 || sensorReadingTemp.samples[i] > 1000) {
+      sensorReadingTemp.failure = true;
+    }
+  }
+  
+  float res = -1;
+  if (!sensorReadingTemp.failure) {
+    res = filter_samples(sensorReadingTemp.samples);
+  }
+
+  if (DEBUG && sensorReadingTemp.failure) {
     Serial.print(sensor.name + " raw ranging:");
-    for (int elem : samples) {
+    for (auto elem : sensorReadingTemp.samples) {
       Serial.print(String(elem) + ", ");
     }
     Serial.println("filtered: " + String(res));
   }
 
-
-  if (res == 0 || isnan(res)) {
-    //resample, could be infinite if sufficiently noisy
-    delay(1000);
-    return Claire::getRange(sensor);
-  }
-  
   if (conflicting_pump_old_duty != -1) {
     setPump(*conflicting_pump, conflicting_pump_old_duty);
     if (DEBUG && VERBOSE) {
@@ -173,10 +170,29 @@ int Claire::getRange(const Sensor &sensor) {
       }
 
   }
-  return (int) res;
 
+  // set result
+  sensorReadingTemp.res = res;
 }
 
+float Claire::getRange(const Sensor &sensor) {
+  int error_count = 0;
+  do {
+    Claire::getRangeImpl(sensor);
+    if (sensorReadingTemp.res == -1) {
+      error_count += 1;
+      if (DEBUG) {
+        Serial.println("ERROR ranging " + String(sensor.name) + ", "+ String(error_count) + " time(s)");
+      }
+    }
+  } while(sensorReadingTemp.failure && error_count < SENSOR_MAX_TRIES - 1);
+  
+  if (VERBOSE && (sensorReadingTemp.res == -1 || isnan(sensorReadingTemp.res))) {
+    Serial.println("ERROR: Could not acquire signal from " + String(sensor.name));
+  }
+  
+  return sensorReadingTemp.res;
+}
 
 
 // Takes pump to actuate and the duty in percentage [0..100].

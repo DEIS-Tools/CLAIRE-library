@@ -1,32 +1,9 @@
 #include "Claire.h"
 
 Claire claire = Claire();
+
 using namespace default_pump_defs;
 using namespace default_sensor_defs;
-
-// Below is an example of interacting with the sample:
-//
-//   Available commands
-//   0;                  - This command list
-//   1,<led state>;      - Set led. 0 = off, 1 = on
-//   2,<led brightness>; - Set led brighness. 0 - 1000
-//   3;                  - Show led state
-//
-// Command> 3;
-//
-//  Led status: on
-//  Led brightness: 500
-//
-// Command> 2,1000;
-//
-//   Led status: on
-//   Led brightness: 1000
-//
-// Command> 1,0;
-//
-//   Led status: off
-//   Led brightness: 1000
-
 
 #include <CmdMessenger.h>  // CmdMessenger
 
@@ -84,23 +61,19 @@ void OnStatus() {
   //ShowLedState();
 
   String fmt = "{";
-  
 
   for (int i = 0; i < claire.sensorCount; i++) {
-    //fmt += '"' + String(claire.sensors[i]->name) + '": ' + claire.getRange(claire.sensors[i]) + ",";
+    fmt += "\"" + String(claire.sensors[i].name) + "\": " + claire.getRange(claire.sensors[i]) + ", ";
   }
 
-
-
   for (int i = 0; i < claire.pumpCount; i++) {
-    fmt += '"' + String(claire.pumps[i]->name) + '":' + claire.pumps[i]->duty + ",";
+    fmt += '"' + String(claire.pumps[i]->name) + String("_duty\": ") + String(claire.pumps[i]->duty);
     if (i == claire.pumpCount - 1) {
         fmt += '}';
     } else {
       fmt += ',';
     }
   }
-
   Serial.println(fmt);
 }
 
@@ -232,6 +205,9 @@ void setup() {
 
   // Init CLAIRE
   claire.begin();
+
+  claire.VERBOSE = true;
+  claire.DEBUG = false;
 
   // Show command list
   ShowCommands();

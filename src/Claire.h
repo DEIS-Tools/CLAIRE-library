@@ -10,7 +10,10 @@
 #define SENSOR_MIN_VALUE 0
 #define SENSOR_MAX_VALUE 1023
 #define SENSOR_OUTLIER_THRESHOLD 10
-
+#define SENSOR_NUM_ERROR_BAIL 2
+#define SENSOR_WATER_SETTLE_TIMEOUT 100
+#define SENSOR_BACKOFF 250
+#define SENSOR_MAX_TRIES 3
 
 struct Output {
   Output(const Output&) = delete;
@@ -38,6 +41,17 @@ struct Sensor {
   int tube = -1;
 };
 
+//class Claire;
+class SensorReading {
+  private:
+    friend class Claire;
+    float res = -1;
+    int samples[SENSOR_SAMPLE_SIZE] = { -1 };
+    bool failure = false;
+  public:
+};
+
+
 // default pumps (uses double memory as header imported twice)
 namespace default_pump_defs {
 static Output TUBE0_IN { 2, "Tube0_inflow", 0, true };
@@ -58,11 +72,12 @@ static Output** default_pumps = new Output*[PUMP_COUNT] {
 
 
 namespace default_sensor_defs {
-static const auto TUBE0_HEIGHT = Sensor{ 10, "Tube0_height", 0 };
-static const auto TUBE1_HEIGHT = Sensor{ 11, "Tube1_height", 1 };
+static const auto TUBE0_HEIGHT = Sensor{ 10, "Tube0_water_mm", 0 };
+static const auto TUBE1_HEIGHT = Sensor{ 11, "Tube1_water_mm", 1 };
 }
 
-static Sensor default_sensors[2] = {
+const int SENSOR_COUNT = 2;
+static Sensor default_sensors[SENSOR_COUNT] = {
   default_sensor_defs::TUBE0_HEIGHT,
   default_sensor_defs::TUBE1_HEIGHT
 };
@@ -72,22 +87,24 @@ public:
   Claire() = default;
   Claire(Output *pumpDefinitions, int size);
     
-  bool DEBUG = true;
-  bool VERBOSE = true;
+  bool DEBUG = false;
+  bool VERBOSE = false;
   bool begin();
   // Takes pump to actuate and the duty in percentage [0..100].
   // Expect lower PWM frequency as duty decreases to cope with stalling of pump;
   // e.g. duty of 5% might result in 5 seconds on and 95 seconds off.
   bool setPump(Output &output, int duty);
-  int getRange(const Sensor &sensor);
+  float getRange(const Sensor &sensor);
   void loadEEPROMCalibration();
   void defineNewPumps(Output *newPumps, int sizeNew);
   Output **pumps = default_pumps;
   int pumpCount = PUMP_COUNT; 
   Sensor *sensors = &default_sensors[0];
-  int sensorCount = 2;
+  int sensorCount = SENSOR_COUNT;
 private:
+  void getRangeImpl(const Sensor &sensor);
   bool check();
+  SensorReading sensorReadingTemp;
 };
 
 #endif
