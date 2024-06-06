@@ -2,6 +2,11 @@
 
 Claire claire = Claire();
 
+// setup default verbosity levle
+bool VERBOSE = true;
+bool DEBUG = false;
+
+// use reference implementation pumps and sensors
 using namespace default_pump_defs;
 using namespace default_sensor_defs;
 
@@ -25,7 +30,9 @@ CmdMessenger cmdMessenger = CmdMessenger(Serial);
 enum {
   kCommandList,  // Command to request list of available commands
   kStatus,       // Command to request status of system
+  kStop,         // Command to stop all outputs
   kSetPump,      // Command to set pump to a duty cycle
+  kSetLevel,     // Command to set water level in a given tube
   kPrime,        // Command to prime the pumps by cycling off, 100% n times
   kReset,        // Command to reset the system by emptying reservoirs
   kEmpty,        // Command to empty the demonstrator into bucket for tear-down
@@ -33,15 +40,15 @@ enum {
 
 // Callbacks define on which received commands we take action
 void attachCommandCallbacks() {
-  // Attach callback methods
   cmdMessenger.attach(OnUnknownCommand);
   cmdMessenger.attach(kCommandList, OnCommandList);
   cmdMessenger.attach(kStatus, OnStatus);
+  cmdMessenger.attach(kStop, OnStop);
   cmdMessenger.attach(kSetPump, OnSetPump);
+  cmdMessenger.attach(kSetLevel, OnSetLevel);
   cmdMessenger.attach(kPrime, OnPrime);
   cmdMessenger.attach(kReset, OnReset);
   cmdMessenger.attach(kEmpty, OnEmpty);
-  
 }
 
 // Called when a received command has no attached function
@@ -50,16 +57,13 @@ void OnUnknownCommand() {
   ShowCommands();
 }
 
-// Callback function that shows a list of commands
 void OnCommandList() {
   ShowCommands();
 }
 
-// Callback function that shows led status
 void OnStatus() {
-  // Send back status that describes the led state
-  //ShowLedState();
-
+  // Construct dict from demonstrator state and report at end.
+  // Error reporting is handled by called functions, and sentinel (-1) is used for error state.
   String fmt = "{";
 
   for (int i = 0; i < claire.sensorCount; i++) {
@@ -69,7 +73,7 @@ void OnStatus() {
   for (int i = 0; i < claire.pumpCount; i++) {
     fmt += '"' + String(claire.pumps[i]->name) + String("_duty\": ") + String(claire.pumps[i]->duty);
     if (i == claire.pumpCount - 1) {
-        fmt += '}';
+      fmt += '}';
     } else {
       fmt += ',';
     }
@@ -77,8 +81,12 @@ void OnStatus() {
   Serial.println(fmt);
 }
 
+void OnStop() {
+  claire.eStop();
+}
+
 void OnSetPump() {
-  // read args and sanitise 
+  // read args and sanitise
   int tube = cmdMessenger.readInt16Arg();
   int duty = cmdMessenger.readInt16Arg();
 
@@ -109,84 +117,71 @@ void OnSetPump() {
   }
 }
 
+// sets water level in a tube to arg
+void OnSetLevel() {
+  // validate arg to be within 0..700 mm bound
+
+  // while ranging +/- epsilon is not arg, do respective pumping for decreasing delay (pump for some constant of error)
+}
+
 void OnPrime() {
+  Serial.println("PRIMING: Make sure the minimum level of water is filled into the reservoir");
 
+  bool pump = true;
+  int cycles[] = { 500, 200,
+                   500, 200,
+                   500, 200,
+                   2000, 1000,
+                   2000, 500,
+                   1000, 10 };
+
+  for (auto ms : cycles) {
+    if (pump) {
+      Serial.print("prime: " + String(ms) + " ms, ");
+      claire.setPump(TUBE0_IN, 100);
+      claire.setPump(TUBE1_IN, 100);
+      delay(ms);
+    } else {
+      Serial.print("delay: " + String(ms) + " ms, ");
+      claire.setPump(TUBE0_IN, 0);
+      claire.setPump(TUBE1_IN, 0);
+      delay(ms);
+    }
+    pump = !pump;
+
+    // reset system
+    OnReset();
+  }
+  
 }
 
+// empty all containers into res.
 void OnReset() {
+  
 
 }
+
+
 
 void OnEmpty() {
+  // first reset, then pump out of designated tube
+  OnReset();
 
 }
-
-// Callback function that sets led on or off
-void OnSetLed() {
-  // Read led state argument, expects 0 or 1 and interprets as false or true
-  ledState = cmdMessenger.readBoolArg();
-  ShowLedState();
-}
-
-// Callback function that sets led on or off
-void OnSetLedBrightness() {
-  // Read led brightness argument, expects value between 0 to 255
-  ledBrightness = cmdMessenger.readInt16Arg();
-  // Set led brightness
-  SetBrightness();
-  // Show Led state
-  ShowLedState();
-}
-
 
 // Show available commands
 void ShowCommands() {
   Serial.println("Usage: cmd [args] ;");
   Serial.println(" 0;                 - This command list");
   Serial.println(" 1;                 - Status of system in k:v");
-  Serial.println(" 2, <pump>, <flow>; - Set pump flow. 0 = off, 1..100 = proportional flow-rate");
+  Serial.println(" 2;                 - Emergency stop all actuators");
+  Serial.println(" 3, <pump>, <flow>; - Set pump flow. 0 = off, 1..100 = proportional flow-rate");
   Serial.println("    <pump> = {1: TUBE0_IN, 2: TUBE0_OUT, 3: TUBE1_IN, 4: TUBE1_OUT, 5: STREAM_OUT}");
-  Serial.println(" 4;                 - Primes the pumps on a newly filled system");
-  Serial.println(" 5;                 - Reset system: Empty all reservoirs, then turn all pumps off");
-  Serial.println(" 6;                 - Tear-down: Empty the system and water into separate bucket");
-}
-
-// Show led state
-void ShowLedState() {
-  Serial.print("Led status: ");
-  Serial.println(ledState ? "on" : "off");
-  Serial.print("Led brightness: ");
-  Serial.println(ledBrightness);
-}
-
-// Set led state
-void SetLedState() {
-  if (ledState) {
-    // If led is turned on, go to correct brightness using analog write
-    analogWrite(kBlinkLed, ledBrightness);
-  } else {
-    // If led is turned off, use digital write to disable PWM
-    digitalWrite(kBlinkLed, LOW);
-  }
-}
-
-// Set led brightness
-void SetBrightness() {
-  // clamp value intervalOn on 0 and PWMinterval
-  intervalOn = max(min(ledBrightness, PWMinterval), 0);
-}
-
-// Pulse Width Modulation to vary Led intensity
-// turn on until intervalOn, then turn off until PWMinterval
-bool blinkLed() {
-  if (micros() - prevBlinkTime > PWMinterval) {
-    // Turn led on at end of interval (if led state is on)
-    prevBlinkTime = micros();
-    digitalWrite(kBlinkLed, ledState ? HIGH : LOW);
-  } else if (micros() - prevBlinkTime > intervalOn) {
-    // Turn led off at  halfway interval
-    digitalWrite(kBlinkLed, LOW);
-  }
+  Serial.println(" 4 <tube> <level>;  - Set tube level in millimeters.");
+  Serial.println("   <tube> = {1: TUBE0, 2: TUBE1}");
+  Serial.println(" 5;                 - Primes the pumps on a newly filled system");
+  Serial.println(" 6;                 - Reset system: Empty all reservoirs, then turn all pumps off");
+  Serial.println(" 7;                 - Tear-down: Empty the system and water into separate bucket");
 }
 
 // Setup function
@@ -204,10 +199,9 @@ void setup() {
   pinMode(kBlinkLed, OUTPUT);
 
   // Init CLAIRE
+  claire.VERBOSE = VERBOSE;
+  claire.DEBUG = DEBUG;
   claire.begin();
-
-  claire.VERBOSE = true;
-  claire.DEBUG = false;
 
   // Show command list
   ShowCommands();
@@ -217,5 +211,4 @@ void setup() {
 void loop() {
   // Process incoming serial data, and perform callbacks
   cmdMessenger.feedinSerialData();
-  blinkLed();
 }

@@ -236,6 +236,12 @@ bool Claire::setPump(Output &output, int duty) {
   return true;
 }
 
+void Claire::eStop() {
+  for (Output** p = pumps; *p != nullptr; ++p) {
+    setPump(**p, 0);
+  }
+}
+
 
 void Claire::loadEEPROMCalibration() {
   // eeprom test

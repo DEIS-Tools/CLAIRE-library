@@ -97,6 +97,7 @@ public:
   float getRange(const Sensor &sensor);
   void loadEEPROMCalibration();
   void defineNewPumps(Output *newPumps, int sizeNew);
+  void eStop();
   Output **pumps = default_pumps;
   int pumpCount = PUMP_COUNT; 
   Sensor *sensors = &default_sensors[0];
