@@ -242,6 +242,70 @@ void Claire::eStop() {
   }
 }
 
+bool Claire::setLevel(Output &in, Output &out, int level) {
+  // 
+  if (0 > level || level > TUBE_MAX_LEVEL) {
+    Serial.println("WARN: Level (" + String(level) + ") is out of bounds [0.." + String(TUBE_MAX_LEVEL) + "]");
+    return false;
+  }
+
+  Sensor sensor = default_sensor_defs::TUBE0_HEIGHT;
+
+  if (in.tube == 0) {
+    sensor = default_sensor_defs::TUBE0_HEIGHT; 
+  } else if (in.tube == 1) {
+    sensor = default_sensor_defs::TUBE1_HEIGHT;
+  } else {
+    Serial.println("ERROR: Unknown tube referenced, aborting setLevel");
+    return false;
+  }
+
+  int curr = getRange(sensor);
+  int diff = level - curr;
+  bool goal = curr == level;
+  int close_error_count = 0;
+
+  while (!goal && close_error_count < 3) {
+    Serial.println("actuate"); 
+    
+
+    if (diff > 0) {
+      // adding water
+      setPump(in, 20);
+      delay(SET_LEVEL_SCALING_FACTOR * diff);
+      setPump(in, 0);
+    } else {
+      // subtracting water
+      setPump(out, 20);
+      delay(SET_LEVEL_SCALING_FACTOR * diff);
+      setPump(out, 0);
+    }
+
+    // check diff
+    curr = getRange(sensor);
+    diff = level - curr;
+    goal = curr == level;
+    
+    if (abs(diff) < SET_LEVEL_HYSTERESIS) {
+      close_error_count++;
+    } else {
+      close_error_count--;
+    }
+  }
+
+  if (close_error_count >= 3) {
+    Serial.println("Level set with a error: " + String(diff));
+  } else {
+    Serial.println("Level set with no error");
+  }
+
+  if (abs(diff) > SET_LEVEL_HYSTERESIS) {
+    return false;
+  } else {
+    return true;
+  }
+}
+
 
 void Claire::loadEEPROMCalibration() {
   // eeprom test

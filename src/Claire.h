@@ -15,6 +15,13 @@
 #define SENSOR_BACKOFF 250
 #define SENSOR_MAX_TRIES 3
 
+#define TUBE_MAX_LEVEL 700
+
+// scaling factor on error in unit mm
+#define SET_LEVEL_SCALING_FACTOR 50
+// allowed inaccuracy of ranging when setting level
+#define SET_LEVEL_HYSTERESIS 5
+
 struct Output {
   Output(const Output&) = delete;
   Output(int pin, String name, int tube, bool inflow) {
@@ -98,6 +105,7 @@ public:
   void loadEEPROMCalibration();
   void defineNewPumps(Output *newPumps, int sizeNew);
   void eStop();
+  bool setLevel(Output &in, Output &out, int level);
   Output **pumps = default_pumps;
   int pumpCount = PUMP_COUNT; 
   Sensor *sensors = &default_sensors[0];

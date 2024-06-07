@@ -120,8 +120,22 @@ void OnSetPump() {
 // sets water level in a tube to arg
 void OnSetLevel() {
   // validate arg to be within 0..700 mm bound
+  int tube = cmdMessenger.readInt16Arg();
+  int level = cmdMessenger.readInt16Arg();
 
-  // while ranging +/- epsilon is not arg, do respective pumping for decreasing delay (pump for some constant of error)
+  if (0 > level || level > 700) {
+    Serial.println("Level (" + String(level) + ") is out of bounds [0..700], ignoring command");
+    return;
+  }
+
+  switch (tube) {
+    case 1:
+      (TUBE0_IN, TUBE0_OUT);
+      break;
+    case 2:
+      OnSetLevelImpl(TUBE1_IN, TUBE1_OUT);
+      break;
+  }
 }
 
 void OnPrime() {
@@ -152,13 +166,10 @@ void OnPrime() {
     // reset system
     OnReset();
   }
-  
 }
 
 // empty all containers into res.
 void OnReset() {
-  
-
 }
 
 
@@ -166,7 +177,6 @@ void OnReset() {
 void OnEmpty() {
   // first reset, then pump out of designated tube
   OnReset();
-
 }
 
 // Show available commands
