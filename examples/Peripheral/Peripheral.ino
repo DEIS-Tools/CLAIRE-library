@@ -22,8 +22,8 @@ bool ledState = 1;                      // On/Off state of Led
 int ledBrightness = prevBlinkTime / 2;  // 50 % Brightness
 const int kBlinkLed = 13;               // Pin of internal Led
 
-// Attach a new CmdMessenger object to the default Serial port
-CmdMessenger cmdMessenger = CmdMessenger(Serial);
+// Attach a new CmdMessenger object to the default Serial port, setting cmd sep. to whitespace
+CmdMessenger cmdMessenger = CmdMessenger(Serial, ' ');
 
 // This is the list of recognized commands.
 // In order to receive, attach a callback function to these events
@@ -83,6 +83,7 @@ void OnStatus() {
 
 void OnStop() {
   claire.eStop();
+  Serial.println("Emergency stop applied! Expect state of demonstrator to be undefined.");
 }
 
 void OnSetPump() {
@@ -130,10 +131,13 @@ void OnSetLevel() {
 
   switch (tube) {
     case 1:
-      (TUBE0_IN, TUBE0_OUT);
+      claire.setLevel(TUBE0_IN, TUBE0_OUT, level);
       break;
     case 2:
-      OnSetLevelImpl(TUBE1_IN, TUBE1_OUT);
+      claire.setLevel(TUBE1_IN, TUBE1_OUT, level);
+      break;
+    default:
+      Serial.println("Unknown tube '" + String(tube) + "' ignoring command");
       break;
   }
 }
@@ -185,8 +189,8 @@ void ShowCommands() {
   Serial.println(" 0;                 - This command list");
   Serial.println(" 1;                 - Status of system in k:v");
   Serial.println(" 2;                 - Emergency stop all actuators");
-  Serial.println(" 3, <pump>, <flow>; - Set pump flow. 0 = off, 1..100 = proportional flow-rate");
-  Serial.println("    <pump> = {1: TUBE0_IN, 2: TUBE0_OUT, 3: TUBE1_IN, 4: TUBE1_OUT, 5: STREAM_OUT}");
+  Serial.println(" 3 <pump> <flow>; - Set pump flow. 0 = off, 1..100 = proportional flow-rate");
+  Serial.println("   <pump> = {1: TUBE0_IN, 2: TUBE0_OUT, 3: TUBE1_IN, 4: TUBE1_OUT, 5: STREAM_OUT}");
   Serial.println(" 4 <tube> <level>;  - Set tube level in millimeters.");
   Serial.println("   <tube> = {1: TUBE0, 2: TUBE1}");
   Serial.println(" 5;                 - Primes the pumps on a newly filled system");
