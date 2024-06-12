@@ -4,25 +4,14 @@ Claire claire = Claire();
 
 // setup default verbosity levle
 bool VERBOSE = true;
-bool DEBUG = false;
+bool DEBUG = true;
 
 // use reference implementation pumps and sensors
 using namespace default_pump_defs;
 using namespace default_sensor_defs;
 
-#include <CmdMessenger.h>  // CmdMessenger
-
-// PWM timing variables
-unsigned long intervalOn = 0;
-unsigned long prevBlinkTime = 0;
-const unsigned long PWMinterval = 1000;
-
-// Blinking led variables
-bool ledState = 1;                      // On/Off state of Led
-int ledBrightness = prevBlinkTime / 2;  // 50 % Brightness
-const int kBlinkLed = 13;               // Pin of internal Led
-
-// Attach a new CmdMessenger object to the default Serial port, setting cmd sep. to whitespace
+// Attach CmdMessenger object to the default Serial port, setting cmd sep. to whitespace
+#include <CmdMessenger.h>
 CmdMessenger cmdMessenger = CmdMessenger(Serial, ' ');
 
 // This is the list of recognized commands.
@@ -36,6 +25,7 @@ enum {
   kPrime,        // Command to prime the pumps by cycling off, 100% n times
   kReset,        // Command to reset the system by emptying reservoirs
   kEmpty,        // Command to empty the demonstrator into bucket for tear-down
+  kTest          // Command to test output on all 
 };
 
 // Callbacks define on which received commands we take action
@@ -49,6 +39,7 @@ void attachCommandCallbacks() {
   cmdMessenger.attach(kPrime, OnPrime);
   cmdMessenger.attach(kReset, OnReset);
   cmdMessenger.attach(kEmpty, OnEmpty);
+  cmdMessenger.attach(kTest, OnTest);
 }
 
 // Called when a received command has no attached function
@@ -183,6 +174,10 @@ void OnEmpty() {
   OnReset();
 }
 
+void OnTest() {
+  claire.testOutput();
+}
+
 // Show available commands
 void ShowCommands() {
   Serial.println("Usage: cmd [args] ;");
@@ -196,6 +191,7 @@ void ShowCommands() {
   Serial.println(" 5;                 - Primes the pumps on a newly filled system");
   Serial.println(" 6;                 - Reset system: Empty all reservoirs, then turn all pumps off");
   Serial.println(" 7;                 - Tear-down: Empty the system and water into separate bucket");
+  Serial.println(" 8;                 - Sweep PWM on outputs. Will require reset to quit");
 }
 
 // Setup function
@@ -208,9 +204,6 @@ void setup() {
 
   // Attach my application's user-defined callback methods
   attachCommandCallbacks();
-
-  // set pin for blink LED
-  pinMode(kBlinkLed, OUTPUT);
 
   // Init CLAIRE
   claire.VERBOSE = VERBOSE;

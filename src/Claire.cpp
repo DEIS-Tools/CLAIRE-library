@@ -306,6 +306,36 @@ bool Claire::setLevel(Output &in, Output &out, int level) {
   }
 }
 
+void Claire::testOutput() {
+  Serial.println("WARN: Will run until power cycled. Sweeping all channel PWM signals");
+  
+  // ensure all are output
+  for (int pin = OUTPUT_GPIO_MIN; pin <= OUTPUT_GPIO_MAX; pin++) {
+    pinMode(pin, OUTPUT);
+  }
+  
+
+  int duty = 100;
+  int incr = -10;
+  while (1) {
+    for (int pin = OUTPUT_GPIO_MIN; pin <= OUTPUT_GPIO_MAX; pin++) {  
+      Serial.print(String(pin) + ": " + String(duty) + ", ");
+      // write PWM signal to pin
+      analogWrite(pin, map(abs(duty), 0, 100, 0, 255));
+      
+    }
+    // flip incr sign if hitting bound in this iter
+    if (duty + incr < 0) {
+      incr = 10;
+    } else if (duty + incr > 100) {
+      incr = -10; 
+    }
+    duty += incr;
+
+    delay(250);
+    Serial.println();
+  }
+}
 
 void Claire::loadEEPROMCalibration() {
   // eeprom test
@@ -314,3 +344,4 @@ void Claire::loadEEPROMCalibration() {
   Serial.println("EEPROM: " + String(EEPROM.read(0)));
   EEPROM.write(0, 255);
 }
+

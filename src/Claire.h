@@ -6,6 +6,9 @@
 
 #define VERSION "0.1.5"
 
+#define OUTPUT_GPIO_MIN 2
+#define OUTPUT_GPIO_MAX 7
+
 #define SENSOR_SAMPLE_SIZE 5
 #define SENSOR_MIN_VALUE 0
 #define SENSOR_MAX_VALUE 1023
@@ -105,6 +108,7 @@ public:
   void loadEEPROMCalibration();
   void defineNewPumps(Output *newPumps, int sizeNew);
   void eStop();
+  void testOutput();
   bool setLevel(Output &in, Output &out, int level);
   Output **pumps = default_pumps;
   int pumpCount = PUMP_COUNT; 
