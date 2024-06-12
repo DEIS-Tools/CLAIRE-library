@@ -8,7 +8,42 @@ To model this, each tube has an inflow- and outflow-pump along with an ultrasoni
 ## Usage
 Install the library from the Arduino Library Manager by searching for 'CLAIRE'.
 
-See `Basic.ino` example bundled with the library for getting started.
+### Console
+Flash `Peripheral.ino` onto an Arduino Mega using the Arduino IDE. Use a serial device tool such as `tio` or `screen` to connect to the Arduino with serial over USB. On Linux, given the virtual terminal path `/dev/ttyUSB0` and a baud rate of `115200`, do: `tio -b 115200 /dev/ttyUSB0`.
+
+Once connected (on v0.1.5), you are presented with the following usage-message:
+```
+$ tio -b 115200 /dev/ttyUSB0
+[11:24:19.157] tio v3.3
+[11:24:19.157] Press ctrl-t q to quit
+[11:24:19.215] Connected to /dev/ttyUSB0
+Initialising CLAIRE water management v0.1.5
+Usage: cmd [args] ;
+ 0;                 - This command list
+ 1;                 - Status of system in k:v
+ 2;                 - Emergency stop all actuators
+ 3 <pump> <flow>; - Set pump flow. 0 = off, 1..100 = proportional flow-rate
+   <pump> = {1: TUBE0_IN, 2: TUBE0_OUT, 3: TUBE1_IN, 4: TUBE1_OUT, 5: STREAM_OUT}
+ 4 <tube> <level>;  - Set tube level in millimeters.
+   <tube> = {1: TUBE0, 2: TUBE1}
+ 5;                 - Primes the pumps on a newly filled system
+ 6;                 - Reset system: Empty all reservoirs, then turn all pumps off
+ 7;                 - Tear-down: Empty the system and water into separate bucket
+ 8;                 - Sweep PWM on outputs. Will require reset to quit
+```
+
+Actuate on the demonstrator by passing commands, e.g. to run inflow of tube 0 at 40% duty, pass: `3 1 40;`
+
+Get the state of the system by passing: `1;` You get returned an associative array with the state of the system, example below. Failure to acquire a clean signal on the height of the water column in a tube is represented by the sentiel `-1.00`.
+```
+{"Tube0_water_mm": 572.23, "Tube1_water_mm": -1.00, "Tube0_inflow_duty": 40,"Tube0_outflow_duty": 0,"Tube1_inflow_duty": 100,"Tube1_outflow_duty": 20,"Stream_outflow_duty": 0}
+```
+
+Set the desired level of water in a tube by using command `4`. This will fill the tube using the ranging as feedback, until it reaches the desired level in millimeters.
+
+### Custom firmware
+
+See `Basic.ino` example bundled with the library for getting started writing your own firmware.
 
 ```c
 #include "Claire.h"
