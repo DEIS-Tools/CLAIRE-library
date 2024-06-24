@@ -9,27 +9,28 @@ To model this, each tube has an inflow- and outflow-pump along with an ultrasoni
 Install the library from the Arduino Library Manager by searching for 'CLAIRE'.
 
 ### Console
-Flash `Peripheral.ino` onto an Arduino Mega using the Arduino IDE. Use a serial device tool such as `tio` or `screen` to connect to the Arduino with serial over USB. On Linux, given the virtual terminal path `/dev/ttyUSB0` and a baud rate of `115200`, do: `tio -b 115200 /dev/ttyUSB0`.
+Flash `Console.ino` onto an Arduino Mega using the Arduino IDE. Use a serial device tool such as `tio` or `screen` to connect to the Arduino with serial over USB. On Linux, given the virtual terminal path `/dev/ttyUSB0` and a baud rate of `115200`, do: `tio -b 115200 /dev/ttyUSB0`.
 
-Once connected (on v0.1.5), you are presented with the following usage-message:
+Once connected (on v0.1.6), you are presented with the following usage-message:
 ```
 $ tio -b 115200 /dev/ttyUSB0
 [11:24:19.157] tio v3.3
 [11:24:19.157] Press ctrl-t q to quit
 [11:24:19.215] Connected to /dev/ttyUSB0
-Initialising CLAIRE water management v0.1.5
+Initialising CLAIRE water management v0.1.6
 Usage: cmd [args] ;
- 0;                 - This command list
- 1;                 - Status of system in k:v
- 2;                 - Emergency stop all actuators
- 3 <pump> <flow>; - Set pump flow. 0 = off, 1..100 = proportional flow-rate
+ 0;                  - This command list
+ 1;                  - Status of system in k:v
+ 2;                  - Emergency stop all actuators
+ 3 <pump> <flow>;    - Set pump flow. 0 = off, 1..100 = proportional flow-rate
    <pump> = {1: TUBE0_IN, 2: TUBE0_OUT, 3: TUBE1_IN, 4: TUBE1_OUT, 5: STREAM_OUT}
- 4 <tube> <level>;  - Set tube level in millimeters.
+ 4 <tube> <level>;   - Set tube level in millimeters.
    <tube> = {1: TUBE0, 2: TUBE1}
- 5;                 - Primes the pumps on a newly filled system
- 6;                 - Reset system: Empty all reservoirs, then turn all pumps off
- 7;                 - Tear-down: Empty the system and water into separate bucket
- 8;                 - Sweep PWM on outputs. Will require reset to quit
+ 5;                  - Primes the pumps on a newly filled system
+ 6;                  - Reset system: Empty all reservoirs, then turn all pumps off
+ 7;                  - Tear-down: Empty the system and water into separate bucket
+ 8;                  - Sweep PWM on outputs. Will require reset to quit
+ 9 <verbose> <debug>;- Set verbosity and debug level (0=off, 1=on)
 ```
 
 Actuate on the demonstrator by passing commands, e.g. to run inflow of tube 0 at 40% duty, pass: `3 1 40;`

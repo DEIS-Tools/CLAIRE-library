@@ -215,7 +215,7 @@ bool Claire::setPump(Output &output, int duty) {
   // set written duty for later start/stop during ranging
   output.duty = duty;
 
-  // if inflow, put respective solenoid high
+  // FIXME: if inflow, put respective solenoid high
   if (output.pin == 3 && duty > 0) {
     digitalWrite(8, HIGH);
   } else if (output.pin == 3 && duty == 0) {

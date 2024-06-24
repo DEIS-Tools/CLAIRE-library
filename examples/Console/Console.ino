@@ -2,7 +2,7 @@
 
 Claire claire = Claire();
 
-// setup default verbosity levle
+// setup default verbosity levels
 bool VERBOSE = true;
 bool DEBUG = true;
 
@@ -25,7 +25,8 @@ enum {
   kPrime,        // Command to prime the pumps by cycling off, 100% n times
   kReset,        // Command to reset the system by emptying reservoirs
   kEmpty,        // Command to empty the demonstrator into bucket for tear-down
-  kTest          // Command to test output on all 
+  kTest,         // Command to test output on all 
+  kVerbosity     // Command to change verbosity of CLAIRE
 };
 
 // Callbacks define on which received commands we take action
@@ -40,6 +41,7 @@ void attachCommandCallbacks() {
   cmdMessenger.attach(kReset, OnReset);
   cmdMessenger.attach(kEmpty, OnEmpty);
   cmdMessenger.attach(kTest, OnTest);
+  cmdMessenger.attach(kVerbosity, OnVerbosity);
 }
 
 // Called when a received command has no attached function
@@ -178,20 +180,29 @@ void OnTest() {
   claire.testOutput();
 }
 
+void OnVerbosity() {
+  VERBOSE = cmdMessenger.readBoolArg();
+  DEBUG = cmdMessenger.readBoolArg();
+  claire.DEBUG = DEBUG;
+  claire.VERBOSE = VERBOSE;
+  Serial.println("Verbose: " + String(VERBOSE) + " debug: " + String(DEBUG));
+}
+
 // Show available commands
 void ShowCommands() {
   Serial.println("Usage: cmd [args] ;");
-  Serial.println(" 0;                 - This command list");
-  Serial.println(" 1;                 - Status of system in k:v");
-  Serial.println(" 2;                 - Emergency stop all actuators");
-  Serial.println(" 3 <pump> <flow>; - Set pump flow. 0 = off, 1..100 = proportional flow-rate");
+  Serial.println(" 0;                  - This command list");
+  Serial.println(" 1;                  - Status of system in k:v");
+  Serial.println(" 2;                  - Emergency stop all actuators");
+  Serial.println(" 3 <pump> <flow>;    - Set pump flow. 0 = off, 1..100 = proportional flow-rate");
   Serial.println("   <pump> = {1: TUBE0_IN, 2: TUBE0_OUT, 3: TUBE1_IN, 4: TUBE1_OUT, 5: STREAM_OUT}");
-  Serial.println(" 4 <tube> <level>;  - Set tube level in millimeters.");
+  Serial.println(" 4 <tube> <level>;   - Set tube level in millimeters.");
   Serial.println("   <tube> = {1: TUBE0, 2: TUBE1}");
-  Serial.println(" 5;                 - Primes the pumps on a newly filled system");
-  Serial.println(" 6;                 - Reset system: Empty all reservoirs, then turn all pumps off");
-  Serial.println(" 7;                 - Tear-down: Empty the system and water into separate bucket");
-  Serial.println(" 8;                 - Sweep PWM on outputs. Will require reset to quit");
+  Serial.println(" 5;                  - Primes the pumps on a newly filled system");
+  Serial.println(" 6;                  - Reset system: Empty all reservoirs, then turn all pumps off");
+  Serial.println(" 7;                  - Tear-down: Empty the system and water into separate bucket");
+  Serial.println(" 8;                  - Sweep PWM on outputs. Will require reset to quit");
+  Serial.println(" 9 <verbose> <debug>;- Set verbosity and debug level (0=off, 1=on)");
 }
 
 // Setup function
