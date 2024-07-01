@@ -4,7 +4,7 @@
 #include <Arduino.h>
 #include <EEPROM.h>
 
-#define VERSION "0.1.6"
+#define VERSION "0.1.7"
 
 #define OUTPUT_GPIO_MIN 2
 #define OUTPUT_GPIO_MAX 7
@@ -27,17 +27,19 @@
 
 struct Output {
   Output(const Output&) = delete;
-  Output(int pin, String name, int tube, bool inflow) {
+  Output(int pin, String name, int tube, bool inflow, int solenoid_pin) {
     this->pin = pin;
     this->name = name;
     this->tube = tube;
     this->inflow = inflow;
+    this->solenoid_pin = solenoid_pin;
   }
   int pin = -1;
   String name = "unknown pump";
   int duty = 0;
   int tube = -1;
   int inflow = false;
+  int solenoid_pin = -1;
 };
 
 struct Sensor {
@@ -51,7 +53,6 @@ struct Sensor {
   int tube = -1;
 };
 
-//class Claire;
 class SensorReading {
   private:
     friend class Claire;
@@ -64,20 +65,23 @@ class SensorReading {
 
 // default pumps (uses double memory as header imported twice)
 namespace default_pump_defs {
-static Output TUBE0_IN { 2, "Tube0_inflow", 0, true };
-static Output TUBE0_OUT { 3, "Tube0_outflow", 0, false };
-static Output TUBE1_IN { 6, "Tube1_inflow", 1, true }; //fixme: chan. 3 on driver-board seems wonky, switched to unused chan.
-static Output TUBE1_OUT { 5, "Tube1_outflow", 1, false };
-static Output STREAM_OUT { 7, "Stream_outflow", -1, false };
+static Output TUBE0_IN { 2, "Tube0_inflow", 0, true, -1 };
+static Output TUBE0_OUT { 3, "Tube0_outflow", 0, false, 8 };
+static Output TUBE1_IN { 4, "Tube1_inflow", 1, true, -1 }; 
+static Output TUBE1_OUT { 5, "Tube1_outflow", 1, false, 9 };
+static Output STREAM_IN { 6, "Stream_inflow", -1, false, -1 };
+static Output STREAM_OUT { 7, "Stream_outflow", -1, false, -1 };
 }
 
-const int PUMP_COUNT = 5;
-static Output** default_pumps = new Output*[PUMP_COUNT] {
+const int PUMP_COUNT = 6;
+static Output** default_pumps = new Output*[PUMP_COUNT + 1] {
   &default_pump_defs::TUBE0_IN,
   &default_pump_defs::TUBE0_OUT,
   &default_pump_defs::TUBE1_IN,
   &default_pump_defs::TUBE1_OUT,
-  &default_pump_defs::STREAM_OUT
+  &default_pump_defs::STREAM_IN,
+  &default_pump_defs::STREAM_OUT,
+  nullptr
 };
 
 
@@ -92,6 +96,7 @@ static Sensor default_sensors[SENSOR_COUNT] = {
   default_sensor_defs::TUBE1_HEIGHT
 };
 
+
 class Claire {
 public:
   Claire() = default;
@@ -99,13 +104,12 @@ public:
     
   bool DEBUG = false;
   bool VERBOSE = false;
+  bool ENABLE_RANGE_CONFLICT = false; 
   bool begin();
-  // Takes pump to actuate and the duty in percentage [0..100].
-  // Expect lower PWM frequency as duty decreases to cope with stalling of pump;
-  // e.g. duty of 5% might result in 5 seconds on and 95 seconds off.
   bool setPump(Output &output, int duty);
   float getRange(const Sensor &sensor);
-  void loadEEPROMCalibration();
+  void loadEEPROMCalibration(); 
+  void saveEEPROMCalibration(); 
   void defineNewPumps(Output *newPumps, int sizeNew);
   void eStop();
   void testOutput();

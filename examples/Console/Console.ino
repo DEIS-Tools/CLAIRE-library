@@ -103,6 +103,9 @@ void OnSetPump() {
       claire.setPump(TUBE1_OUT, duty);
       break;
     case 5:
+      claire.setPump(STREAM_IN, duty);
+      break;
+    case 6:
       claire.setPump(STREAM_OUT, duty);
       break;
     default:

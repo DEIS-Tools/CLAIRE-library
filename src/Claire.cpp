@@ -29,6 +29,12 @@ bool Claire::begin() {
       pinMode(pumps[i]->pin, OUTPUT);
       // ensure this pump is off on init
       digitalWrite(pumps[i]->pin, 0);
+
+      // similarly for solenoid pins
+      if (pumps[i]->solenoid_pin != -1) {
+        pinMode(pumps[i]->solenoid_pin, OUTPUT);
+        digitalWrite(pumps[i]->solenoid_pin, 0);
+      }
     } 
 
     digitalWrite(LED_BUILTIN, !ok);
@@ -115,7 +121,7 @@ void Claire::getRangeImpl(const Sensor &sensor) {
   int conflicting_pump_old_duty = -1;
   Output *conflicting_pump;
 
-  if (DEBUG && VERBOSE) {
+  if (ENABLE_RANGE_CONFLICT && DEBUG && VERBOSE) {
     Serial.println("Checking for pump conflicting with ranging");
   }
   
@@ -128,19 +134,21 @@ void Claire::getRangeImpl(const Sensor &sensor) {
         Serial.println("Stopping " + String(pumps[i]->name) + " while ranging");
       }
 
-      // remember pump and set duty before stopping
-      conflicting_pump_old_duty = pumps[i]->duty;
-      conflicting_pump = pumps[i];
-      setPump(*conflicting_pump, 0);
-      break;
+      if (ENABLE_RANGE_CONFLICT) {
+        // remember pump and set duty before stopping
+        conflicting_pump_old_duty = pumps[i]->duty;
+        conflicting_pump = pumps[i];
+        setPump(*conflicting_pump, 0);
+        break;
+      }
     }
   }
-  if (conflicting_pump_old_duty == -1 && DEBUG && VERBOSE) {
-    Serial.println("No conflict found");
+  if (ENABLE_RANGE_CONFLICT && conflicting_pump_old_duty == -1 && DEBUG && VERBOSE) {
+    Serial.println("No ranging conflict found");
   }
-
+  
   // delay shortly to settle water in tube before sampling
-  delay(SENSOR_WATER_SETTLE_TIMEOUT);
+  if (ENABLE_RANGE_CONFLICT) delay(SENSOR_WATER_SETTLE_TIMEOUT);
 
   // do sampling
   for (int i = 0; i < SENSOR_SAMPLE_SIZE; i++) {
@@ -163,12 +171,11 @@ void Claire::getRangeImpl(const Sensor &sensor) {
     Serial.println("filtered: " + String(res));
   }
 
-  if (conflicting_pump_old_duty != -1) {
+  if (ENABLE_RANGE_CONFLICT && conflicting_pump_old_duty != -1) {
     setPump(*conflicting_pump, conflicting_pump_old_duty);
     if (DEBUG && VERBOSE) {
         Serial.println("Started " + String(conflicting_pump->name) + " after ranging");
       }
-
   }
 
   // set result
@@ -201,7 +208,7 @@ float Claire::getRange(const Sensor &sensor) {
 bool Claire::setPump(Output &output, int duty) {
   // validate input
   if (duty < 0 || duty > 100) {
-    Serial.println("Duty out of bounds at: " + String(duty) + " must be [0..100]");
+    Serial.println("ERROR: Duty out of bounds at: " + String(duty) + " must be [0..100]");
     return false;
   }
 
@@ -215,23 +222,20 @@ bool Claire::setPump(Output &output, int duty) {
   // set written duty for later start/stop during ranging
   output.duty = duty;
 
-  // FIXME: if inflow, put respective solenoid high
-  if (output.pin == 3 && duty > 0) {
-    digitalWrite(8, HIGH);
-  } else if (output.pin == 3 && duty == 0) {
-    digitalWrite(8, LOW);
+  // check for solenoid to handle 
+  if (output.solenoid_pin != -1) {
+    if (duty > 0) {
+      if (DEBUG) Serial.println("Setting high\t solenoid_pin: " + String(output.solenoid_pin));
+      digitalWrite(output.solenoid_pin, HIGH);
+    } else {
+      if (DEBUG) Serial.println("Setting low\t solenoid_pin: " + String(output.solenoid_pin));
+      digitalWrite(output.solenoid_pin, LOW);
+    }
   }
-  if (output.pin == 5 && duty > 0) {
-    digitalWrite(9, HIGH);
-  } else if (output.pin == 5 && duty == 0) {
-    digitalWrite(9, LOW);
-  }
-
 
   if (DEBUG) {
     Serial.println("Set " + output.name + " to " + String(duty) + "%");
   }
-
 
   return true;
 }
@@ -243,7 +247,6 @@ void Claire::eStop() {
 }
 
 bool Claire::setLevel(Output &in, Output &out, int level) {
-  // 
   if (0 > level || level > TUBE_MAX_LEVEL) {
     Serial.println("WARN: Level (" + String(level) + ") is out of bounds [0.." + String(TUBE_MAX_LEVEL) + "]");
     return false;
@@ -307,23 +310,17 @@ bool Claire::setLevel(Output &in, Output &out, int level) {
 }
 
 void Claire::testOutput() {
-  Serial.println("WARN: Will run until power cycled. Sweeping all channel PWM signals");
+  Serial.println("WARN: Will run until power cycled. Sweeping all channel PWM signals with solenoid activation");
   
-  // ensure all are output
-  for (int pin = OUTPUT_GPIO_MIN; pin <= OUTPUT_GPIO_MAX; pin++) {
-    pinMode(pin, OUTPUT);
-  }
-  
-
-  int duty = 100;
+  int duty = 0;
   int incr = -10;
   while (1) {
-    for (int pin = OUTPUT_GPIO_MIN; pin <= OUTPUT_GPIO_MAX; pin++) {  
-      Serial.print(String(pin) + ": " + String(duty) + ", ");
-      // write PWM signal to pin
-      analogWrite(pin, map(abs(duty), 0, 100, 0, 255));
-      
+    Serial.print("Duty: " + String(duty) + " ");
+    for (Output** p = pumps; *p != nullptr; ++p) {
+      Serial.print("pin: " + String((*p)->pin) + " (" + String((*p)->solenoid_pin) + "), ");
+    setPump(**p, duty);
     }
+
     // flip incr sign if hitting bound in this iter
     if (duty + incr < 0) {
       incr = 10;
@@ -345,3 +342,6 @@ void Claire::loadEEPROMCalibration() {
   EEPROM.write(0, 255);
 }
 
+void Claire::saveEEPROMCalibration() {
+
+}
