@@ -269,23 +269,34 @@ bool Claire::setLevel(Output &in, Output &out, int level) {
   int close_error_count = 0;
 
   while (!goal && close_error_count < 3) {
-    Serial.println("actuate"); 
-    
-
-    if (diff > 0) {
+    int delay_ms = max(min(abs(SET_LEVEL_SCALING_FACTOR * diff), SET_LEVEL_MAX_ACTUATE_TIME), SET_LEVEL_MIN_ACTUATE_TIME);
+    if (diff < 0) {
       // adding water
+      if (VERBOSE) Serial.println("D: " + String(diff) + " (C: " + String(curr) + " L: " + String(level) + ") Adding water for: " + String(delay_ms) + " ms"); 
       setPump(in, 20);
-      delay(SET_LEVEL_SCALING_FACTOR * diff);
+      delay(delay_ms);
       setPump(in, 0);
     } else {
       // subtracting water
+      if (VERBOSE) Serial.println("D: " + String(diff) + " (C: " + String(curr) + " L: " + String(level) + ") Removing water for: " + String(delay_ms) + " ms"); 
       setPump(out, 20);
-      delay(SET_LEVEL_SCALING_FACTOR * diff);
+      delay(delay_ms);
       setPump(out, 0);
     }
 
+    //delay to settle
+    if (ENABLE_RANGE_CONFLICT) delay(SENSOR_WATER_SETTLE_TIMEOUT);
+
     // check diff
     curr = getRange(sensor);
+    int tries = 0;
+    while (curr == -1) {
+      curr = getRange(sensor);
+      tries++;
+      if (tries > 2) {
+        return false;
+      }
+    }
     diff = level - curr;
     goal = curr == level;
     

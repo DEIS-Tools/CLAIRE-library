@@ -4,17 +4,17 @@
 #include <Arduino.h>
 #include <EEPROM.h>
 
-#define VERSION "0.1.7"
+#define VERSION "0.1.8"
 
 #define OUTPUT_GPIO_MIN 2
 #define OUTPUT_GPIO_MAX 7
 
-#define SENSOR_SAMPLE_SIZE 5
+#define SENSOR_SAMPLE_SIZE 10
 #define SENSOR_MIN_VALUE 0
 #define SENSOR_MAX_VALUE 1023
 #define SENSOR_OUTLIER_THRESHOLD 10
 #define SENSOR_NUM_ERROR_BAIL 2
-#define SENSOR_WATER_SETTLE_TIMEOUT 100
+#define SENSOR_WATER_SETTLE_TIMEOUT 500
 #define SENSOR_BACKOFF 250
 #define SENSOR_MAX_TRIES 3
 
@@ -22,6 +22,8 @@
 
 // scaling factor on error in unit mm
 #define SET_LEVEL_SCALING_FACTOR 50
+#define SET_LEVEL_MIN_ACTUATE_TIME 1500
+#define SET_LEVEL_MAX_ACTUATE_TIME 5000
 // allowed inaccuracy of ranging when setting level
 #define SET_LEVEL_HYSTERESIS 5
 

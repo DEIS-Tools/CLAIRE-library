@@ -4,7 +4,7 @@ Claire claire = Claire();
 
 // setup default verbosity levels
 bool VERBOSE = true;
-bool DEBUG = true;
+bool DEBUG = false;
 
 // use reference implementation pumps and sensors
 using namespace default_pump_defs;
@@ -177,6 +177,8 @@ void OnReset() {
 void OnEmpty() {
   // first reset, then pump out of designated tube
   OnReset();
+  Serial.println("WARN: Running pump: " + String(TUBE0_IN.name) + " at 100% until user resets!");
+  claire.setPump(TUBE0_IN, 100);
 }
 
 void OnTest() {
