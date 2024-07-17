@@ -4,7 +4,7 @@
 #include <Arduino.h>
 #include <EEPROM.h>
 
-#define VERSION "0.1.8"
+#define VERSION "0.1.9"
 
 #define OUTPUT_GPIO_MIN 2
 #define OUTPUT_GPIO_MAX 7
@@ -109,7 +109,7 @@ public:
   bool ENABLE_RANGE_CONFLICT = false; 
   bool begin();
   bool setPump(Output &output, int duty);
-  float getRange(const Sensor &sensor);
+  float getRange(const Sensor &sensor, bool filtered = true);
   void loadEEPROMCalibration(); 
   void saveEEPROMCalibration(); 
   void defineNewPumps(Output *newPumps, int sizeNew);
@@ -121,7 +121,7 @@ public:
   Sensor *sensors = &default_sensors[0];
   int sensorCount = SENSOR_COUNT;
 private:
-  void getRangeImpl(const Sensor &sensor);
+  void getRangeImpl(const Sensor &sensor, bool filtered = true);
   bool check();
   SensorReading sensorReadingTemp;
 };

@@ -19,6 +19,7 @@ CmdMessenger cmdMessenger = CmdMessenger(Serial, ' ');
 enum {
   kCommandList,  // Command to request list of available commands
   kStatus,       // Command to request status of system
+  kQuickStatus,  // Command to request a quick status (one sample) of system
   kStop,         // Command to stop all outputs
   kSetPump,      // Command to set pump to a duty cycle
   kSetLevel,     // Command to set water level in a given tube
@@ -34,6 +35,7 @@ void attachCommandCallbacks() {
   cmdMessenger.attach(OnUnknownCommand);
   cmdMessenger.attach(kCommandList, OnCommandList);
   cmdMessenger.attach(kStatus, OnStatus);
+  cmdMessenger.attach(kQuickStatus, OnQuickStatus);
   cmdMessenger.attach(kStop, OnStop);
   cmdMessenger.attach(kSetPump, OnSetPump);
   cmdMessenger.attach(kSetLevel, OnSetLevel);
@@ -54,13 +56,13 @@ void OnCommandList() {
   ShowCommands();
 }
 
-void OnStatus() {
+String getStatus(bool filtered) {
   // Construct dict from demonstrator state and report at end.
   // Error reporting is handled by called functions, and sentinel (-1) is used for error state.
   String fmt = "{";
 
   for (int i = 0; i < claire.sensorCount; i++) {
-    fmt += "\"" + String(claire.sensors[i].name) + "\": " + claire.getRange(claire.sensors[i]) + ", ";
+    fmt += "\"" + String(claire.sensors[i].name) + "\": " + claire.getRange(claire.sensors[i], filtered) + ", ";
   }
 
   for (int i = 0; i < claire.pumpCount; i++) {
@@ -71,7 +73,17 @@ void OnStatus() {
       fmt += ',';
     }
   }
-  Serial.println(fmt);
+  return fmt;
+}
+
+void OnStatus() {
+  // do default samples
+  Serial.println(getStatus(true));
+}
+
+void OnQuickStatus() {
+  // only do one sample
+  Serial.println(getStatus(false));
 }
 
 void OnStop() {
@@ -198,16 +210,17 @@ void ShowCommands() {
   Serial.println("Usage: cmd [args] ;");
   Serial.println(" 0;                  - This command list");
   Serial.println(" 1;                  - Status of system in k:v");
-  Serial.println(" 2;                  - Emergency stop all actuators");
-  Serial.println(" 3 <pump> <flow>;    - Set pump flow. 0 = off, 1..100 = proportional flow-rate");
+  Serial.println(" 2;                  - Quick status (1 sample) of system in k:v");
+  Serial.println(" 3;                  - Emergency stop all actuators");
+  Serial.println(" 4 <pump> <flow>;    - Set pump flow. 0 = off, 1..100 = proportional flow-rate");
   Serial.println("   <pump> = {1: TUBE0_IN, 2: TUBE0_OUT, 3: TUBE1_IN, 4: TUBE1_OUT, 5: STREAM_OUT}");
-  Serial.println(" 4 <tube> <level>;   - Set tube level in millimeters.");
+  Serial.println(" 5 <tube> <level>;   - Set tube level in millimeters.");
   Serial.println("   <tube> = {1: TUBE0, 2: TUBE1}");
-  Serial.println(" 5;                  - Primes the pumps on a newly filled system");
-  Serial.println(" 6;                  - Reset system: Empty all reservoirs, then turn all pumps off");
-  Serial.println(" 7;                  - Tear-down: Empty the system and water into separate bucket");
-  Serial.println(" 8;                  - Sweep PWM on outputs. Will require reset to quit");
-  Serial.println(" 9 <verbose> <debug>;- Set verbosity and debug level (0=off, 1=on)");
+  Serial.println(" 6;                  - Primes the pumps on a newly filled system");
+  Serial.println(" 7;                  - Reset system: Empty all reservoirs, then turn all pumps off");
+  Serial.println(" 8;                  - Tear-down: Empty the system and water into separate bucket");
+  Serial.println(" 9;                  - Sweep PWM on outputs. Will require reset to quit");
+  Serial.println("10 <verbose> <debug>;- Set verbosity and debug level (0=off, 1=on)");
 }
 
 // Setup function

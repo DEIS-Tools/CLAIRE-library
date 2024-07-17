@@ -116,7 +116,7 @@ float filter_samples(int readings[]) {
   return filtered_avg; 
 }
 
-void Claire::getRangeImpl(const Sensor &sensor) {
+void Claire::getRangeImpl(const Sensor &sensor, bool filtered) {
   // if duty for inflow, for given tube is positive; remember duty, turn off for epsilon, then reset duty
   int conflicting_pump_old_duty = -1;
   Output *conflicting_pump;
@@ -150,8 +150,9 @@ void Claire::getRangeImpl(const Sensor &sensor) {
   // delay shortly to settle water in tube before sampling
   if (ENABLE_RANGE_CONFLICT) delay(SENSOR_WATER_SETTLE_TIMEOUT);
 
-  // do sampling
-  for (int i = 0; i < SENSOR_SAMPLE_SIZE; i++) {
+  // do sampling, only once if unfiltered
+  int sample_count = filtered ? SENSOR_SAMPLE_SIZE : 1;
+  for (int i = 0; i < SENSOR_SAMPLE_SIZE ; i++) {
     sensorReadingTemp.samples[i] = pulseIn(sensor.pin, HIGH);
     if (sensorReadingTemp.samples[i] == 0 || sensorReadingTemp.samples[i] > 1000) {
       sensorReadingTemp.failure = true;
@@ -182,10 +183,10 @@ void Claire::getRangeImpl(const Sensor &sensor) {
   sensorReadingTemp.res = res;
 }
 
-float Claire::getRange(const Sensor &sensor) {
+float Claire::getRange(const Sensor &sensor, bool filtered = true) {
   int error_count = 0;
   do {
-    Claire::getRangeImpl(sensor);
+    Claire::getRangeImpl(sensor, filtered);
     if (sensorReadingTemp.res == -1) {
       error_count += 1;
       if (DEBUG) {

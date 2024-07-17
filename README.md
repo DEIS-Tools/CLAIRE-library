@@ -42,6 +42,13 @@ Get the state of the system by passing: `1;` You get returned an associative arr
 
 Set the desired level of water in a tube by using command `4`. This will fill the tube using the ranging as feedback, until it reaches the desired level in millimeters.
 
+### System dynamics
+Equilibrium between inflow and outflow at max tube level is obtained at system state:
+```py
+{"Tube0_water_mm": 296.60, "Tube1_water_mm": 295.50, "Tube0_inflow_duty": 100,"Tube0_outflow_duty": 30,"Tube1_inflow_duty": 100,"Tube1_outflow_duty": 30,"Stream_inflow_duty": 0,"Stream_outflow_duty": 0}
+
+```
+
 ### Custom firmware
 
 See `Basic.ino` example bundled with the library for getting started writing your own firmware.
