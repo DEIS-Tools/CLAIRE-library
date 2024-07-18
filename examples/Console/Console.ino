@@ -132,7 +132,7 @@ void OnSetLevel() {
   int tube = cmdMessenger.readInt16Arg();
   int level = cmdMessenger.readInt16Arg();
 
-  if (0 > level || level > 700) {
+  if (0 > level || level > TUBE_MAX_LEVEL) {
     Serial.println("Level (" + String(level) + ") is out of bounds [0..700], ignoring command");
     return;
   }
@@ -140,9 +140,11 @@ void OnSetLevel() {
   switch (tube) {
     case 1:
       claire.setLevel(TUBE0_IN, TUBE0_OUT, level);
+      Serial.println("Set level resulted in: " + String(claire.getRange(claire.sensors[0])));
       break;
     case 2:
       claire.setLevel(TUBE1_IN, TUBE1_OUT, level);
+      Serial.println("Set level resulted in: " + String(claire.getRange(claire.sensors[1])));
       break;
     default:
       Serial.println("Unknown tube '" + String(tube) + "' ignoring command");
