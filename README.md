@@ -11,7 +11,7 @@ To model this, each tube has an inflow- and outflow-pump along with an ultrasoni
 Install the library from the Arduino Library Manager by searching for 'CLAIRE'.
 
 Install the following external dependencies from the Arduino Library Manager:
-- CmdMessenger, v4.0.0
+- [CmdMessenger](https://github.com/thijse/Arduino-CmdMessenger/), v4.0.0
 
 ### Console
 Flash `Console.ino` onto an Arduino Mega using the Arduino IDE. Use a serial device tool such as `tio` or `screen` to connect to the Arduino with serial over USB. On Linux, given the virtual terminal path `/dev/ttyUSB0` and a baud rate of `115200`, do: `tio -b 115200 /dev/ttyUSB0`.
