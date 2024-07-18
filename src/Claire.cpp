@@ -281,8 +281,9 @@ bool Claire::setLevel(Output &in, Output &out, int level) {
       // subtracting water
       if (VERBOSE) Serial.println("D: " + String(diff) + " (C: " + String(curr) + " L: " + String(level) + ") Removing water for: " + String(delay_ms) + " ms"); 
       setPump(out, 20);
-      delay(delay_ms);
+      delay(max(1000, delay_ms));
       setPump(out, 0);
+      delay(100);
     }
 
     //delay to settle
