@@ -187,9 +187,12 @@ void OnPrime() {
 void OnReset() {
   Serial.println("Emptying all tubes into reservoir");
   if (VERBOSE) Serial.println("Emptying TUBE0");
-  claire.setLevel(TUBE0_IN, TUBE0_OUT, TUBE_MAX_LEVEL);
+  bool ok_tube0 = claire.setLevel(TUBE0_IN, TUBE0_OUT, TUBE_MAX_LEVEL);
   if (VERBOSE) Serial.println("Emptying TUBE1");
-  claire.setLevel(TUBE1_IN, TUBE1_OUT, TUBE_MAX_LEVEL);
+  bool ok_tube1 = claire.setLevel(TUBE1_IN, TUBE1_OUT, TUBE_MAX_LEVEL);
+  if (ok_tube0 && ok_tube1) {
+    Serial.println("All tubes emptied successfully");
+  }
 }
 
 
