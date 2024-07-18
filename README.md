@@ -6,7 +6,12 @@ The controller knows the forecast, the level of the basin(s), and can choose to 
 To model this, each tube has an inflow- and outflow-pump along with an ultrasonic sensor to measure with mm-precision the height of the water column. This is exposed with an interface to the user for control.
 
 ## Usage
+
+### Installation
 Install the library from the Arduino Library Manager by searching for 'CLAIRE'.
+
+Install the following external dependencies from the Arduino Library Manager:
+- CmdMessenger, v4.0.0
 
 ### Console
 Flash `Console.ino` onto an Arduino Mega using the Arduino IDE. Use a serial device tool such as `tio` or `screen` to connect to the Arduino with serial over USB. On Linux, given the virtual terminal path `/dev/ttyUSB0` and a baud rate of `115200`, do: `tio -b 115200 /dev/ttyUSB0`.
