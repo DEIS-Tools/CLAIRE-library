@@ -270,14 +270,15 @@ bool Claire::setLevel(Output &in, Output &out, int level) {
   int close_error_count = 0;
 
   while (!goal && close_error_count < 3) {
-    int delay_ms = max(min(abs(SET_LEVEL_SCALING_FACTOR * diff), SET_LEVEL_MAX_ACTUATE_TIME), SET_LEVEL_MIN_ACTUATE_TIME);
     if (diff < 0) {
+      int delay_ms = max(min(abs(SET_LEVEL_SCALING_FACTOR * diff), SET_LEVEL_ADD_MAX_ACTUATE_TIME), SET_LEVEL_ADD_MIN_ACTUATE_TIME);
       // adding water
       if (VERBOSE) Serial.println("D: " + String(diff) + " (C: " + String(curr) + " L: " + String(level) + ") Adding water for: " + String(delay_ms) + " ms"); 
       setPump(in, 20);
       delay(delay_ms);
       setPump(in, 0);
     } else {
+      int delay_ms = max(min(abs(SET_LEVEL_SCALING_FACTOR * diff), SET_LEVEL_SUB_MAX_ACTUATE_TIME), SET_LEVEL_SUB_MIN_ACTUATE_TIME);
       // subtracting water
       if (VERBOSE) Serial.println("D: " + String(diff) + " (C: " + String(curr) + " L: " + String(level) + ") Removing water for: " + String(delay_ms) + " ms"); 
       setPump(out, 20);
