@@ -291,7 +291,7 @@ bool Claire::setLevel(Output &in, Output &out, int level) {
 
     // check diff
     curr = getRange(sensor);
-    int tries = 0;
+    int tries = 1;
     while (curr == -1) {
       curr = getRange(sensor);
       tries++;
