@@ -184,6 +184,8 @@ void OnPrime() {
 
 // empty all containers into res.
 void OnReset() {
+  claire.setLevel(TUBE0_IN, TUBE0_OUT, TUBE_MAX_LEVEL);
+  claire.setLevel(TUBE1_IN, TUBE1_OUT, TUBE_MAX_LEVEL);
 }
 
 
