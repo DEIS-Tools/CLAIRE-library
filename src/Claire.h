@@ -18,11 +18,11 @@
 #define SENSOR_BACKOFF 250
 #define SENSOR_MAX_TRIES 3
 
-#define TUBE_MAX_LEVEL 700
+#define TUBE_MAX_LEVEL 900
 
 // scaling factor on error in unit mm
 #define SET_LEVEL_SCALING_FACTOR 50
-#define SET_LEVEL_MIN_ACTUATE_TIME 1500
+#define SET_LEVEL_MIN_ACTUATE_TIME 500
 #define SET_LEVEL_MAX_ACTUATE_TIME 5000
 // allowed inaccuracy of ranging when setting level
 #define SET_LEVEL_HYSTERESIS 5
