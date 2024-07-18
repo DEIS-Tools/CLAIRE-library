@@ -4,7 +4,7 @@
 #include <Arduino.h>
 #include <EEPROM.h>
 
-#define VERSION "0.1.9"
+#define VERSION "0.1.10"
 
 #define OUTPUT_GPIO_MIN 2
 #define OUTPUT_GPIO_MAX 7
@@ -18,12 +18,14 @@
 #define SENSOR_BACKOFF 250
 #define SENSOR_MAX_TRIES 3
 
-#define TUBE_MAX_LEVEL 700
+#define TUBE_MAX_LEVEL 900
 
 // scaling factor on error in unit mm
 #define SET_LEVEL_SCALING_FACTOR 50
-#define SET_LEVEL_MIN_ACTUATE_TIME 1500
-#define SET_LEVEL_MAX_ACTUATE_TIME 5000
+#define SET_LEVEL_ADD_MIN_ACTUATE_TIME 500
+#define SET_LEVEL_ADD_MAX_ACTUATE_TIME 5000
+#define SET_LEVEL_SUB_MIN_ACTUATE_TIME 1000
+#define SET_LEVEL_SUB_MAX_ACTUATE_TIME 5000
 // allowed inaccuracy of ranging when setting level
 #define SET_LEVEL_HYSTERESIS 5
 
