@@ -29,6 +29,8 @@ class ClaireDevice:
         self.read_thread = threading.Thread(target=self._read_lines)
         self.read_thread.daemon = True
         self.read_thread.start()
+        print(f'{TAG} Device connected to {port}, waiting for initialization...')
+        sleep(3)
 
     def _read_lines(self):
         """Read lines from the serial port and add to the buffer in a thread to not block the main thread."""
@@ -71,7 +73,9 @@ class ClaireDevice:
         # take buf backwards and try to coerce every line into dict
         for line in reversed(self.buf_lines()):
             try:
-                return utils.parse_str_dict(line)
+                state = utils.parse_str_dict(line)
+                print(f'{TAG} Got state: {state}')
+                return state
             except ValueError:
                 pass
 
@@ -86,14 +90,11 @@ class ClaireDevice:
 
 if __name__ == '__main__':
     claire = ClaireDevice(PORT)
-    sleep(3)  # waiting until the device is ready
-
-    claire.get_state()
+    state = claire.get_state()  # get current state of device
+    print(f'{TAG} Current height of TUBE0: {state["Tube0_water_mm"]}')
 
     claire.write('7 1 500;')  # set level to 500mm in first tube
     claire.busy = True  # device becomes busy until level is set, unsetting upon validating return
-
-
 
     # wait forever or until KeyboardInterrupt
     try:
