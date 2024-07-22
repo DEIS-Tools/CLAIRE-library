@@ -26,7 +26,7 @@ enum {
   kPrime,        // Command to prime the pumps by cycling off, 100% n times
   kReset,        // Command to reset the system by emptying reservoirs
   kEmpty,        // Command to empty the demonstrator into bucket for tear-down
-  kTest,         // Command to test output on all 
+  kTest,         // Command to test output on all
   kVerbosity     // Command to change verbosity of CLAIRE
 };
 
@@ -131,7 +131,7 @@ void OnSetLevel() {
   int tube = cmdMessenger.readInt16Arg();
   int level = cmdMessenger.readInt16Arg();
 
-  // fixme: add guard for other end of range when auto-calibration is implemented 
+  // fixme: add guard for other end of range when auto-calibration is implemented
   // validate arg to be within 0..MAX mm bound
   if (0 > level || level > TUBE_MAX_LEVEL) {
     Serial.println("Level (" + String(level) + ") is out of bounds [0.." + String(TUBE_MAX_LEVEL) + "], ignoring command");
