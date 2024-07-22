@@ -1,5 +1,6 @@
 #include "Claire.h"
 #include "math.h"
+#include "AceSorting.h"
 
 using namespace default_pump_defs;
 
@@ -83,34 +84,53 @@ void Claire::defineNewPumps(Output *newPumps, int sizeNew) {
 }
 
 
-float filter_samples(int readings[]) {
-  int filteredValues[SENSOR_SAMPLE_SIZE];
-  float raw_avg = 0; 
+float filter_samples(int readings[], int sample_count, bool DEBUG, bool VERBOSE) {
+  int filteredValues[sample_count];
+  float raw_mean = 0; 
   float filtered_avg = 0;
   int j = 0;
 
-  for (int i = 0; i < SENSOR_SAMPLE_SIZE; i++) {
-    raw_avg += readings[i];
+  // Sanity check
+  if (sample_count <= 0) {
+    return NAN;
   }
-  raw_avg = raw_avg / SENSOR_SAMPLE_SIZE;
 
-  for (int i = 0; i < SENSOR_SAMPLE_SIZE; i++) {
-    // discard outliers
-    if (abs(readings[i] - raw_avg) < SENSOR_OUTLIER_THRESHOLD) {
+  // Special case if sample count 1 one
+  if (sample_count == 1) {
+    return readings[0];
+  }
+
+  if (DEBUG) {
+    for (int i = 0; i < sample_count; i++) {
+      Serial.println("Raw reading " + String(i) + ": " + String(readings[i]));
+    }
+  }
+  ace_sorting::insertionSort(readings, sample_count);
+
+  if (sample_count%2) {
+    // Even number of samples
+    raw_mean = (readings[sample_count/2] + readings[(sample_count/2) - 1])/2;
+  } else {
+    // Odd number of samples
+    raw_mean = readings[SENSOR_SAMPLE_SIZE/2];
+  }
+
+  for (int i = 0; i < sample_count; i++) {
+    // Discard outliers
+    if (abs(readings[i] - raw_mean) < SENSOR_OUTLIER_THRESHOLD) {
       filteredValues[j] = readings[i];
       j++;
     }
   }
-
+  
   for (int i = 0; i < j; i++) {
     filtered_avg += filteredValues[i];
   }
   filtered_avg =  filtered_avg / j;
 
-
   // fixme: add debug from local Claire object scope
-  if (true && raw_avg != filtered_avg) {
-    Serial.println("Outliers detected (raw) (filtered) " + String(raw_avg) + " : " + String(filtered_avg));
+  if (j < SENSOR_SAMPLE_SIZE) {
+    Serial.println("Outliers detected (raw mean) (filtered average) " + String(raw_mean) + " : " + String(filtered_avg));
   }
 
   return filtered_avg; 
@@ -161,7 +181,7 @@ void Claire::getRangeImpl(const Sensor &sensor, bool filtered) {
 
   float res = -1;
   if (!sensorReadingTemp.failure) {
-    res = filter_samples(sensorReadingTemp.samples);
+    res = filter_samples(sensorReadingTemp.samples, sample_count, DEBUG, VERBOSE);
   }
 
   if (DEBUG && sensorReadingTemp.failure) {

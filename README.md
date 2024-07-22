@@ -12,6 +12,7 @@ Install the library from the Arduino Library Manager by searching for 'CLAIRE'.
 
 If using `Console.ino`, the following dependencies installed from the Arduino Library Manager are required:
 - [CmdMessenger](https://github.com/thijse/Arduino-CmdMessenger/), v4.0.0 | `arduino-cli lib install "CmdMessenger"@4.0.0`
+- [AceSorting](https://github.com/bxparks/AceSorting), v1.0.0 | `arduino-cli lib install "AceSorting"@1.0.0`
 
 ### Console-firmware
 Flash `Console.ino` onto an Arduino Mega using the Arduino IDE. Use a serial device tool such as `tio` or `screen` to connect to the Arduino with serial over USB. On Linux, given the virtual terminal path `/dev/ttyUSB0` and a baud rate of `115200`, do: `tio -b 115200 /dev/ttyUSB0`.
