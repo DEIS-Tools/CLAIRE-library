@@ -92,6 +92,7 @@ float filter_samples(int readings[], int sample_count, bool DEBUG, bool VERBOSE)
 
   // Sanity check
   if (sample_count <= 0) {
+    Serial.println("No data points to filter.")
     return NAN;
   }
 
@@ -121,6 +122,11 @@ float filter_samples(int readings[], int sample_count, bool DEBUG, bool VERBOSE)
       filteredValues[j] = readings[i];
       j++;
     }
+  }
+
+  if (j == 0) {
+    Serial.println("All data points were classified as outliers.")
+    return NAN;
   }
   
   for (int i = 0; i < j; i++) {
