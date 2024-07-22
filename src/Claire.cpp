@@ -92,6 +92,7 @@ float filter_samples(int readings[], int sample_count, bool DEBUG, bool VERBOSE)
 
   // Sanity check
   if (sample_count <= 0) {
+    Serial.println("No data points to filter.")
     return NAN;
   }
 
