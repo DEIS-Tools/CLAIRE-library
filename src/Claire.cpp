@@ -113,7 +113,7 @@ float filter_samples(int readings[], int sample_count, bool DEBUG, bool VERBOSE)
     raw_mean = (readings[sample_count/2] + readings[(sample_count/2) - 1])/2;
   } else {
     // Odd number of samples
-    raw_mean = readings[SENSOR_SAMPLE_SIZE/2];
+    raw_mean = readings[sample_count/2];
   }
 
   for (int i = 0; i < sample_count; i++) {
@@ -135,7 +135,7 @@ float filter_samples(int readings[], int sample_count, bool DEBUG, bool VERBOSE)
   filtered_avg =  filtered_avg / j;
 
   // fixme: add debug from local Claire object scope
-  if (j < SENSOR_SAMPLE_SIZE) {
+  if (j < sample_count) {
     Serial.println("Outliers detected (raw mean) (filtered average) " + String(raw_mean) + " : " + String(filtered_avg));
   }
 
