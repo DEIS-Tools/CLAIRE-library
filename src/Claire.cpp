@@ -181,7 +181,7 @@ void Claire::getRangeImpl(const Sensor &sensor, bool filtered) {
 
   float res = -1;
   if (!sensorReadingTemp.failure) {
-    res = filter_samples(sensorReadingTemp.samples);
+    res = filter_samples(sensorReadingTemp.samples, sample_count, DEBUG, VERBOSE);
   }
 
   if (DEBUG && sensorReadingTemp.failure) {
