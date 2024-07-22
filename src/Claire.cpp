@@ -122,6 +122,11 @@ float filter_samples(int readings[], int sample_count, bool DEBUG, bool VERBOSE)
       j++;
     }
   }
+
+  if (j == 0) {
+    Serial.println("All data points were classified as outliers.")
+    return NAN;
+  }
   
   for (int i = 0; i < j; i++) {
     filtered_avg += filteredValues[i];
