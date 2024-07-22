@@ -152,13 +152,13 @@ void Claire::getRangeImpl(const Sensor &sensor, bool filtered) {
 
   // do sampling, only once if unfiltered
   int sample_count = filtered ? SENSOR_SAMPLE_SIZE : 1;
-  for (int i = 0; i < SENSOR_SAMPLE_SIZE ; i++) {
+  for (int i = 0; i < sample_count ; i++) {
     sensorReadingTemp.samples[i] = pulseIn(sensor.pin, HIGH);
     if (sensorReadingTemp.samples[i] == 0 || sensorReadingTemp.samples[i] > 1000) {
       sensorReadingTemp.failure = true;
     }
   }
-  
+
   float res = -1;
   if (!sensorReadingTemp.failure) {
     res = filter_samples(sensorReadingTemp.samples);
