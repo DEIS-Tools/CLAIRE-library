@@ -10,6 +10,7 @@ PORT = '/dev/cu.usbserial-1420'
 IMMEDIATE_OUTPUT = True
 TAG = "DRIVER:"
 CLAIRE_VERSION = "v0.1.10"
+TUBE_MAX_LEVEL = 900
 
 class ColorPrinting(object):
     HEADER = '\033[95m'
@@ -142,6 +143,27 @@ class ClaireDevice:
     def close(self):
         self.ser.close()
 
+    def set_water_level(self, tube, level):
+        """Set the water level in the selected tube to the provided height"""
+        assert tube == 1 or tube == 2
+        assert 0 <= level <= TUBE_MAX_LEVEL
+        self.write(f"5 {tube} {level};")
+        self.busy = True
+
+    def set_inflow(self, tube, rate):
+        """Set the inflow in the tube to the provided rate"""
+        assert tube == 1 or tube == 2
+        assert 0 <= rate <= 100
+        pump = (tube - 1) * 2 + 1
+        self.write(f"4 {pump} {rate};")
+
+    def set_outflow(self, tube, rate):
+        """Set the outflow in the tube to the provided rate"""
+        assert tube == 1 or tube == 2
+        assert 0 <= rate <= 100
+        pump = tube * 2
+        self.write(f"4 {pump} {rate};")
+
 
 if __name__ == '__main__':
     claire = ClaireDevice(PORT)
@@ -149,8 +171,14 @@ if __name__ == '__main__':
     claire.print_state(state)
     print(f'{TAG} Current height of TUBE0: {state["Tube0_water_mm"]}')
 
-    claire.write('5 1 500;')  # set level to 500mm in first tube
-    claire.busy = True  # device becomes busy until level is set, unsetting upon validating return
+    claire.set_inflow(1, 100)
+    sleep(3)
+    claire.set_inflow(1, 0)
+    sleep(3)
+    claire.set_outflow(1, 100)
+    sleep(3)
+    claire.set_outflow(1, 0)
+    claire.set_water_level(1, 500)  # set level to 600mm in first tube
 
     # wait forever or until KeyboardInterrupt
     try:
