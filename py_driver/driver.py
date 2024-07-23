@@ -9,6 +9,7 @@ PORT = '/dev/ttyUSB0'
 IMMEDIATE_OUTPUT = True
 TAG = "DRIVER:"
 
+
 class ClaireDevice:
     def __init__(self, port):
         self.device = port
@@ -24,8 +25,9 @@ class ClaireDevice:
 
         self.ser = serial.Serial(port, 115200, timeout=1, exclusive=exclusive)
 
-        # buffer of entire run, fixme: add mark to separate lines already shown
+        # buffer of entire run
         self.read_buffer = []
+        self.last_printed_buf_line = -1
         self.read_thread = threading.Thread(target=self._read_lines)
         self.read_thread.daemon = True
         self.read_thread.start()
@@ -40,12 +42,19 @@ class ClaireDevice:
                 self.heartbeat = time()
                 self.read_buffer.extend([line.decode('utf-8').rstrip() for line in buf])
                 if IMMEDIATE_OUTPUT:
-                    self.print_buf()
+                    self.print_new_lines_buf()
 
     def buf_lines(self) -> list[str]:
         """Return the lines in the buffer"""
-        lines = self.read_buffer[:]
-        return lines
+        return self.read_buffer[:]
+
+    def buf_lines_from(self, start) -> list[str]:
+        """Return the lines in the buffer from start"""
+        return self.read_buffer[start:]
+
+    def last_buf_lines(self) -> list[str]:
+        """Return the lines in the buffer from last_printed_buf_line"""
+        return self.buf_lines_from(self.last_printed_buf_line + 1)
 
     def print_buf(self):
         """Print the lines in the buffer to stderr (coloured) to differentiate from experiment stdout"""
@@ -53,12 +62,25 @@ class ClaireDevice:
         for line in self.buf_lines():
             print(line, file=sys.stderr)
 
+    def print_last_line_buf(self):
+        """Prints the last line in the buffer to stderr (coloured) to differentiate from experiment stdout"""
+        # print to stderr to get colour
+        print(self.read_buffer[-1], file=sys.stderr)
+
+    def print_new_lines_buf(self):
+        """
+        Prints the new (not yet printed) lines in the buffer to stderr (coloured) to differentiate from experiment
+        stdout.
+        """
+        # print to stderr to get colour
+        if len(self.read_buffer) > self.last_printed_buf_line + 1:
+            for line in self.last_buf_lines():
+                print(line, file=sys.stderr)
+            self.last_printed_buf_line = len(self.read_buffer) - 1
+
     def get_state(self):
         """Get the last state of the device."""
         self.write('1;')
-
-        # copy buffer
-        buf = self.buf_lines()
 
         # wait for the state to be received
         while True:
@@ -93,7 +115,7 @@ if __name__ == '__main__':
     state = claire.get_state()  # get current state of device
     print(f'{TAG} Current height of TUBE0: {state["Tube0_water_mm"]}')
 
-    claire.write('7 1 500;')  # set level to 500mm in first tube
+    claire.write('5 1 500;')  # set level to 500mm in first tube
     claire.busy = True  # device becomes busy until level is set, unsetting upon validating return
 
     # wait forever or until KeyboardInterrupt
