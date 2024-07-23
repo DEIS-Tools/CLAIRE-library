@@ -103,7 +103,6 @@ class ClaireDevice:
             sleep(1)
             state = self.get_last_state()
             if state:
-                print(f'{TAG} Got state: {state}')
                 return state
 
     def get_last_state(self):
@@ -112,10 +111,13 @@ class ClaireDevice:
         for line in reversed(self.buf_lines()):
             try:
                 state = utils.parse_str_dict(line)
-                print(f'{TAG} Got state: {state}')
                 return state
             except ValueError:
                 pass
+
+    def print_state(self, state):
+        """Print state of the system"""
+        print(f'{TAG} Got state: {state}')
 
     def write(self, data):
         """Write data to the serial port."""
@@ -129,6 +131,7 @@ class ClaireDevice:
 if __name__ == '__main__':
     claire = ClaireDevice(PORT)
     state = claire.get_state()  # get current state of device
+    claire.print_state(state)
     print(f'{TAG} Current height of TUBE0: {state["Tube0_water_mm"]}')
 
     claire.write('5 1 500;')  # set level to 500mm in first tube
