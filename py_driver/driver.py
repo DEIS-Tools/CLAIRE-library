@@ -12,7 +12,13 @@ TAG = "DRIVER:"
 CLAIRE_VERSION = "v0.1.10"
 TUBE_MAX_LEVEL = 900
 
+
 class ColorPrinting(object):
+    """
+    ANSI escape coding for printing colors.
+
+    Usage: start string with the desired format escape code, end string with ENDC end coding.
+    """
     HEADER = '\033[95m'
     OKBLUE = '\033[94m'
     OKCYAN = '\033[96m'
