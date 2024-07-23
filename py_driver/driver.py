@@ -11,6 +11,7 @@ IMMEDIATE_OUTPUT = True
 TAG = "DRIVER:"
 CLAIRE_VERSION = "v0.1.10"
 TUBE_MAX_LEVEL = 900
+DEBUG = True
 
 
 class ColorPrinting(object):
@@ -122,13 +123,16 @@ class ClaireDevice:
 
         # wait for the state to be received
         while True:
-            sleep(1)
-            state = self.get_last_state()
+            sleep(3)  # Getting filtered state takes some time, each sensor reading takes 50-100 ms
+            state = self.get_last_raw_state()
             if state:
+                # Convert distance to water level
+                state["Tube0_water_mm"] = round(self.convert_distance_to_level(state["Tube0_water_mm"]), 1)
+                state["Tube1_water_mm"] = round(self.convert_distance_to_level(state["Tube1_water_mm"]), 1)
                 return state
 
-    def get_last_state(self):
-        """Get the last state of the device without polling"""
+    def get_last_raw_state(self):
+        """Get the last raw state of the device without polling"""
         # take buf backwards and try to coerce every line into dict
         for line in reversed(self.buf_lines()):
             try:
@@ -144,7 +148,8 @@ class ClaireDevice:
 
     def write(self, data):
         """Write data to the serial port."""
-        print(f'{TAG} Writing command: {data}')
+        if DEBUG:
+            print(f'{TAG} Writing command: {data}')
         self.ser.write(data.encode('utf-8'))
 
     def close(self):
