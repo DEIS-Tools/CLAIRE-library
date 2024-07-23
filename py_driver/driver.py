@@ -5,9 +5,26 @@ from time import sleep, time
 import serial
 import utils
 
-PORT = '/dev/ttyUSB0'
+# PORT = '/dev/ttyUSB0'
+PORT = '/dev/cu.usbserial-1420'
 IMMEDIATE_OUTPUT = True
 TAG = "DRIVER:"
+
+
+class ColorPrinting(object):
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
+    @staticmethod
+    def print_blue(text):
+        print(f"{ColorPrinting.OKBLUE}{text}{ColorPrinting.ENDC}")
 
 
 class ClaireDevice:
@@ -57,25 +74,24 @@ class ClaireDevice:
         return self.buf_lines_from(self.last_printed_buf_line + 1)
 
     def print_buf(self):
-        """Print the lines in the buffer to stderr (coloured) to differentiate from experiment stdout"""
+        """Print the lines in the buffer in blue to differentiate from experiment output."""
         # print to stderr to get colour
         for line in self.buf_lines():
-            print(line, file=sys.stderr)
+            ColorPrinting.print_blue(line)
 
     def print_last_line_buf(self):
-        """Prints the last line in the buffer to stderr (coloured) to differentiate from experiment stdout"""
+        """Prints the last line in the buffer in blue to differentiate from experiment output."""
         # print to stderr to get colour
-        print(self.read_buffer[-1], file=sys.stderr)
+        ColorPrinting.print_blue(self.read_buffer[-1])
 
     def print_new_lines_buf(self):
         """
-        Prints the new (not yet printed) lines in the buffer to stderr (coloured) to differentiate from experiment
-        stdout.
+        Prints the new (not yet printed) lines in the buffer in blue to differentiate from experiment output.
         """
         # print to stderr to get colour
         if len(self.read_buffer) > self.last_printed_buf_line + 1:
             for line in self.last_buf_lines():
-                print(line, file=sys.stderr)
+                ColorPrinting.print_blue(line)
             self.last_printed_buf_line = len(self.read_buffer) - 1
 
     def get_state(self):
