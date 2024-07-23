@@ -11,6 +11,7 @@ IMMEDIATE_OUTPUT = True
 TAG = "DRIVER:"
 CLAIRE_VERSION = "v0.1.10"
 TUBE_MAX_LEVEL = 900
+DEBUG = True
 
 
 class ColorPrinting(object):
@@ -122,13 +123,16 @@ class ClaireDevice:
 
         # wait for the state to be received
         while True:
-            sleep(1)
-            state = self.get_last_state()
+            sleep(3)  # Getting filtered state takes some time, each sensor reading takes 50-100 ms
+            state = self.get_last_raw_state()
             if state:
+                # Convert distance to water level
+                state["Tube0_water_mm"] = round(self.convert_distance_to_level(state["Tube0_water_mm"]), 1)
+                state["Tube1_water_mm"] = round(self.convert_distance_to_level(state["Tube1_water_mm"]), 1)
                 return state
 
-    def get_last_state(self):
-        """Get the last state of the device without polling"""
+    def get_last_raw_state(self):
+        """Get the last raw state of the device without polling"""
         # take buf backwards and try to coerce every line into dict
         for line in reversed(self.buf_lines()):
             try:
@@ -137,13 +141,15 @@ class ClaireDevice:
             except ValueError:
                 pass
 
-    def print_state(self, state):
+    @staticmethod
+    def print_state(state):
         """Print state of the system"""
         print(f'{TAG} Got state: {state}')
 
     def write(self, data):
         """Write data to the serial port."""
-        print(f'{TAG} Writing command: {data}')
+        if DEBUG:
+            print(f'{TAG} Writing command: {data}')
         self.ser.write(data.encode('utf-8'))
 
     def close(self):
@@ -153,7 +159,7 @@ class ClaireDevice:
         """Set the water level in the selected tube to the provided height"""
         assert tube == 1 or tube == 2
         assert 0 <= level <= TUBE_MAX_LEVEL
-        self.write(f"5 {tube} {level};")
+        self.write(f"5 {tube} {self.convert_level_to_distance(level)};")
         self.busy = True
 
     def set_inflow(self, tube, rate):
@@ -170,6 +176,16 @@ class ClaireDevice:
         pump = tube * 2
         self.write(f"4 {pump} {rate};")
 
+    @staticmethod
+    def convert_distance_to_level(distance):
+        """Convert sensor distance to water level"""
+        return TUBE_MAX_LEVEL - distance
+
+    @staticmethod
+    def convert_level_to_distance(level):
+        """Convert water level to sensor distance"""
+        return TUBE_MAX_LEVEL - level
+
 
 if __name__ == '__main__':
     claire = ClaireDevice(PORT)
@@ -184,7 +200,7 @@ if __name__ == '__main__':
     claire.set_outflow(1, 100)
     sleep(3)
     claire.set_outflow(1, 0)
-    claire.set_water_level(1, 500)  # set level to 600mm in first tube
+    claire.set_water_level(1, 500)  # set water level to 500mm in first tube
 
     # wait forever or until KeyboardInterrupt
     try:
