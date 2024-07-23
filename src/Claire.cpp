@@ -337,7 +337,7 @@ bool Claire::setLevel(Output &in, Output &out, int level) {
     if (abs(diff) < SET_LEVEL_HYSTERESIS) {
       close_error_count++;
     } else {
-      close_error_count--;
+      close_error_count = max(close_error_count - 1, 0);
     }
   }
 
