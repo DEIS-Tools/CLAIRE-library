@@ -292,25 +292,29 @@ bool Claire::setLevel(Output &in, Output &out, int level) {
 
   int curr = getRange(sensor);
   int diff = level - curr;
+  // Accummulative difference/error, only takes effect if diff < 100 as that is the cut-off range for the P-part with max actuation time.
+  int acc_diff = abs(diff) > 50 ? 0 : diff; 
   bool goal = curr == level;
   int close_error_count = 0;
 
   while (!goal && close_error_count < 3) {
+    // PI-controller
+    int output = SET_LEVEL_PROPORTIONAL_GAIN * diff + SET_LEVEL_INTEGRAL_GAIN * acc_diff;
     if (diff < 0) {
-      int delay_ms = max(min(abs(SET_LEVEL_SCALING_FACTOR * diff), SET_LEVEL_ADD_MAX_ACTUATE_TIME), SET_LEVEL_ADD_MIN_ACTUATE_TIME);
+      int delay_ms = max(min(abs(output), SET_LEVEL_ADD_MAX_ACTUATE_TIME), SET_LEVEL_ADD_MIN_ACTUATE_TIME);
       // adding water
       if (VERBOSE) Serial.println("D: " + String(diff) + " (C: " + String(curr) + " L: " + String(level) + ") Adding water for: " + String(delay_ms) + " ms"); 
       setPump(in, 20);
       delay(delay_ms);
       setPump(in, 0);
     } else {
-      int delay_ms = max(min(abs(SET_LEVEL_SCALING_FACTOR * diff), SET_LEVEL_SUB_MAX_ACTUATE_TIME), SET_LEVEL_SUB_MIN_ACTUATE_TIME);
+      int delay_ms = max(min(abs(output), SET_LEVEL_SUB_MAX_ACTUATE_TIME), SET_LEVEL_SUB_MIN_ACTUATE_TIME);
       // subtracting water
       if (VERBOSE) Serial.println("D: " + String(diff) + " (C: " + String(curr) + " L: " + String(level) + ") Removing water for: " + String(delay_ms) + " ms"); 
       setPump(out, 20);
-      delay(max(1000, delay_ms));
+      delay(delay_ms);
       setPump(out, 0);
-      delay(100);
+      delay(100); // To prevent some inteference with the next water level reading. Only happens with outflow.
     }
 
     //delay to settle
@@ -327,12 +331,13 @@ bool Claire::setLevel(Output &in, Output &out, int level) {
       }
     }
     diff = level - curr;
+    acc_diff = abs(diff) > 50 ? 0 : acc_diff + diff;
     goal = curr == level;
     
     if (abs(diff) < SET_LEVEL_HYSTERESIS) {
       close_error_count++;
     } else {
-      close_error_count--;
+      close_error_count = max(close_error_count - 1, 0);
     }
   }
 
