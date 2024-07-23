@@ -9,7 +9,7 @@ import utils
 PORT = '/dev/cu.usbserial-1420'
 IMMEDIATE_OUTPUT = True
 TAG = "DRIVER:"
-CLAIRE_VERSION = "v0.1.10"
+CLAIRE_VERSION = "v0.1.11"
 TUBE_MAX_LEVEL = 900
 DEBUG = True
 
