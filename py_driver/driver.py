@@ -9,7 +9,7 @@ import utils
 PORT = '/dev/cu.usbserial-1420'
 IMMEDIATE_OUTPUT = True
 TAG = "DRIVER:"
-
+CLAIRE_VERSION = "v0.1.10"
 
 class ColorPrinting(object):
     HEADER = '\033[95m'
@@ -50,6 +50,7 @@ class ClaireDevice:
         self.read_thread.start()
         print(f'{TAG} Device connected to {port}, waiting for initialization...')
         sleep(3)
+        self.check_version()
 
     def _read_lines(self):
         """Read lines from the serial port and add to the buffer in a thread to not block the main thread."""
@@ -93,6 +94,20 @@ class ClaireDevice:
             for line in self.last_buf_lines():
                 ColorPrinting.print_blue(line)
             self.last_printed_buf_line = len(self.read_buffer) - 1
+
+    def check_version(self):
+        """Check the version of the software on the Arduino"""
+        # Version number is on the first line, as that reads "Initialising CLAIRE water management <version>"
+        line = self.read_buffer[0]
+        words = line.split(' ')
+
+        # Sanity checking
+        assert words[0] == "Initialising"
+        assert len(words) == 5
+
+        # Check version
+        assert words[-1] == CLAIRE_VERSION, f"The CLAIRE software on the Arduino is version {words[-1]}, while this " \
+                                            f"Python script is constructed for version {CLAIRE_VERSION}."
 
     def get_state(self):
         """Get the last state of the device."""
