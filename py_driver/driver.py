@@ -150,6 +150,20 @@ class ClaireDevice:
         self.write(f"5 {tube} {level};")
         self.busy = True
 
+    def set_inflow(self, tube, rate):
+        """Set the inflow in the tube to the provided rate"""
+        assert tube == 1 or tube == 2
+        assert 0 <= rate <= 100
+        pump = (tube - 1) * 2 + 1
+        self.write(f"4 {pump} {rate};")
+
+    def set_outflow(self, tube, rate):
+        """Set the outflow in the tube to the provided rate"""
+        assert tube == 1 or tube == 2
+        assert 0 <= rate <= 100
+        pump = tube * 2
+        self.write(f"4 {pump} {rate};")
+
 
 if __name__ == '__main__':
     claire = ClaireDevice(PORT)
@@ -157,6 +171,13 @@ if __name__ == '__main__':
     claire.print_state(state)
     print(f'{TAG} Current height of TUBE0: {state["Tube0_water_mm"]}')
 
+    claire.set_inflow(1, 100)
+    sleep(3)
+    claire.set_inflow(1, 0)
+    sleep(3)
+    claire.set_outflow(1, 100)
+    sleep(3)
+    claire.set_outflow(1, 0)
     claire.set_water_level(1, 500)  # set level to 600mm in first tube
 
     # wait forever or until KeyboardInterrupt
