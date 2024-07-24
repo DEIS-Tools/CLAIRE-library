@@ -135,6 +135,8 @@ void OnSetLevel() {
   // validate arg to be within 0..MAX mm bound
   if (0 > level || level > TUBE_MAX_LEVEL) {
     Serial.println("Level (" + String(level) + ") is out of bounds [0.." + String(TUBE_MAX_LEVEL) + "], ignoring command");
+    // Notify that command is finished.
+    Serial.println("Finished");
     return;
   }
 
@@ -151,6 +153,9 @@ void OnSetLevel() {
       Serial.println("Unknown tube '" + String(tube) + "' ignoring command");
       break;
   }
+
+  // Notify that command is finished.
+  Serial.println("Finished");
 }
 
 void OnPrime() {
@@ -181,6 +186,9 @@ void OnPrime() {
     // reset system
     OnReset();
   }
+
+  // Notify that command is finished.
+  Serial.println("Finished");
 }
 
 // empty all containers into res.
