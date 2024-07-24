@@ -48,6 +48,7 @@ class ClaireDevice:
         self.ser = serial.Serial(port, 115200, timeout=1, exclusive=exclusive)
 
         # buffer of entire run
+        self.stopped = False
         self.read_buffer = []
         self.last_printed_buf_line = -1
         self.read_thread = threading.Thread(target=self._read_lines)
@@ -66,6 +67,8 @@ class ClaireDevice:
                 self.read_buffer.extend([line.decode('utf-8').rstrip() for line in buf])
                 if IMMEDIATE_OUTPUT:
                     self.print_new_lines_buf()
+            if self.stopped:
+                break
 
     def buf_lines(self) -> list[str]:
         """Return the lines in the buffer"""
@@ -150,6 +153,8 @@ class ClaireDevice:
         self.ser.write(data.encode('utf-8'))
 
     def close(self):
+        self.stopped = True
+        self.read_thread.join()  # Wait until read thread has been stopped.
         self.ser.close()
 
     def set_water_level(self, tube, level):
