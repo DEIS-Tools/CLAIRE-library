@@ -146,6 +146,7 @@ void Claire::getRangeImpl(const Sensor &sensor, bool filtered) {
   // if duty for inflow, for given tube is positive; remember duty, turn off for epsilon, then reset duty
   int conflicting_pump_old_duty = -1;
   Output *conflicting_pump;
+  sensorReadingTemp.failure = false;
 
   if (ENABLE_RANGE_CONFLICT && DEBUG && VERBOSE) {
     Serial.println("Checking for pump conflicting with ranging");
