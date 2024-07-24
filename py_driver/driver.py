@@ -11,6 +11,11 @@ TUBE_MAX_LEVEL = 900
 DEBUG = True
 
 
+class SensorError(Exception):
+    """Error when sensor reading fails (i.e., returns -1)"""
+    pass
+
+
 class ColorPrinting(object):
     """
     ANSI escape coding for printing colors.
@@ -188,6 +193,8 @@ class ClaireDevice:
     @staticmethod
     def convert_distance_to_level(distance):
         """Convert sensor distance to water level"""
+        if distance < 0:
+            raise SensorError()
         return TUBE_MAX_LEVEL - distance
 
     @staticmethod
