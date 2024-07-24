@@ -64,9 +64,16 @@ class ClaireDevice:
             buf = self.ser.readlines()
             if buf:
                 self.heartbeat = time()
-                self.read_buffer.extend([line.decode('utf-8').rstrip() for line in buf])
+                new_lines = [line.decode('utf-8').rstrip() for line in buf]
+                self.read_buffer.extend(new_lines)
                 if IMMEDIATE_OUTPUT:
                     self.print_new_lines_buf()
+                # Check whether the new lines contain the finished signal.
+                for line in new_lines:
+                    if line == "Finished":
+                        self.busy = False
+
+            # Stop reading lines.
             if self.stopped:
                 break
 
@@ -187,3 +194,9 @@ class ClaireDevice:
     def convert_level_to_distance(level):
         """Convert water level to sensor distance"""
         return TUBE_MAX_LEVEL - level
+
+    def wait_until_free(self):
+        while True:
+            if not self.busy:
+                return
+            sleep(1)
