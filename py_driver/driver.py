@@ -135,7 +135,7 @@ class ClaireDevice:
 
         # wait for the state to be received
         while True:
-            sleep(3)  # Getting filtered state takes some time, each sensor reading takes 50-100 ms
+            sleep(3.5)  # Getting filtered state takes some time, each sensor reading takes 50-100 ms
             state = self.get_last_raw_state()
             if state:
                 # Convert distance to water level
@@ -160,9 +160,12 @@ class ClaireDevice:
 
     def write(self, data):
         """Write data to the serial port."""
+        # Can only send new command if Arduino is not busy.
+        assert not self.busy
         if DEBUG:
             print(f'{TAG} Writing command: {data}')
         self.ser.write(data.encode('utf-8'))
+        sleep(0.1)  # Sleep slightly to take communication delays into account
 
     def close(self):
         self.stopped = True
