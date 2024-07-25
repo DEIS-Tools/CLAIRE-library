@@ -179,19 +179,24 @@ class ClaireDevice:
             return self.state.state
 
         # Ask for new state reading.
+        size_buffer = self.last_printed_buf_line
         self.write('1;')
 
         # Wait for the state to be received.
         while True:
-            sleep(3.5)  # Getting filtered state takes some time, each sensor reading takes 50-100 ms
-            state = self.get_last_raw_state()
-            if state:
-                # Convert distance to water level
-                state["Tube0_water_mm"] = round(self.convert_distance_to_level(state["Tube0_water_mm"]), 1)
-                state["Tube1_water_mm"] = round(self.convert_distance_to_level(state["Tube1_water_mm"]), 1)
-                self.state = ClaireState()
-                self.state.set_state(state)
-                return state
+            if self.last_printed_buf_line > size_buffer:
+                break
+            sleep(0.1)
+
+        # New state retrieved, parse it.
+        state = self.get_last_raw_state()
+        if state:
+            # Convert distance to water level
+            state["Tube0_water_mm"] = round(self.convert_distance_to_level(state["Tube0_water_mm"]), 1)
+            state["Tube1_water_mm"] = round(self.convert_distance_to_level(state["Tube1_water_mm"]), 1)
+            self.state = ClaireState()
+            self.state.set_state(state)
+            return state
 
     def get_last_raw_state(self):
         """Get the last raw state of the device without polling."""
