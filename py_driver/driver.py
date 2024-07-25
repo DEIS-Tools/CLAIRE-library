@@ -12,7 +12,9 @@ DEBUG = True
 
 
 class SensorError(Exception):
-    """Error when sensor reading fails (i.e., returns -1)"""
+    """
+    Error when sensor reading fails (i.e., returns -1)
+    """
     pass
 
 
@@ -37,11 +39,25 @@ class ColorPrinting(object):
         print(f"{ColorPrinting.OKBLUE}{text}{ColorPrinting.ENDC}")
 
 
+class ClaireState:
+    def __init__(self):
+        self.state = None
+        self.outdated = True
+
+    def set_state(self, state):
+        self.state = state
+        self.outdated = False
+
+    def make_outdated(self):
+        self.outdated = True
+
+
 class ClaireDevice:
     def __init__(self, port):
         self.device = port
         self.heartbeat = time()
         self.busy = False
+        self.state = ClaireState()
         # read timeout in secs, 1 should be sufficient
 
         # exclusive only available on posix-like systems, assumes mac-env is posix-like
@@ -131,9 +147,14 @@ class ClaireDevice:
 
     def get_state(self):
         """Get the last state of the device."""
+        # Return cached state if not outdated.
+        if not self.state.outdated:
+            return self.state.state
+
+        # Ask for new state reading.
         self.write('1;')
 
-        # wait for the state to be received
+        # Wait for the state to be received.
         while True:
             sleep(3.5)  # Getting filtered state takes some time, each sensor reading takes 50-100 ms
             state = self.get_last_raw_state()
@@ -141,6 +162,8 @@ class ClaireDevice:
                 # Convert distance to water level
                 state["Tube0_water_mm"] = round(self.convert_distance_to_level(state["Tube0_water_mm"]), 1)
                 state["Tube1_water_mm"] = round(self.convert_distance_to_level(state["Tube1_water_mm"]), 1)
+                self.state = ClaireState()
+                self.state.set_state(state)
                 return state
 
     def get_last_raw_state(self):
@@ -153,10 +176,9 @@ class ClaireDevice:
             except ValueError:
                 pass
 
-    @staticmethod
-    def print_state(state):
+    def print_state(self):
         """Print state of the system"""
-        print(f'{TAG} Got state: {state}')
+        print(f'{TAG} Got state: {self.state}')
 
     def write(self, data):
         """Write data to the serial port."""
@@ -178,6 +200,7 @@ class ClaireDevice:
         assert 0 <= level <= TUBE_MAX_LEVEL
         self.write(f"5 {tube} {self.convert_level_to_distance(level)};")
         self.busy = True
+        self.state.make_outdated()
 
     def set_inflow(self, tube, rate):
         """Set the inflow in the tube to the provided rate"""
@@ -185,6 +208,7 @@ class ClaireDevice:
         assert 0 <= rate <= 100
         pump = (tube - 1) * 2 + 1
         self.write(f"4 {pump} {rate};")
+        self.state.make_outdated()
 
     def set_outflow(self, tube, rate):
         """Set the outflow in the tube to the provided rate"""
@@ -192,6 +216,7 @@ class ClaireDevice:
         assert 0 <= rate <= 100
         pump = tube * 2
         self.write(f"4 {pump} {rate};")
+        self.state.make_outdated()
 
     @staticmethod
     def convert_distance_to_level(distance):
