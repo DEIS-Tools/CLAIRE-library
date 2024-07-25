@@ -9,6 +9,7 @@ TAG = "DRIVER:"
 CLAIRE_VERSION = "v0.1.11"
 TUBE_MAX_LEVEL = 900
 DEBUG = True
+COMMUNICATION_TIMEOUT = 10
 
 
 class SensorError(Exception):
@@ -59,7 +60,7 @@ class ClaireState:
         :param state: The new state to cache.
         """
         self.state = state
-        self.outdated = False
+        self.outdated = state["Tube0_inflow_duty"] or state["Tube0_outflow_duty"] or state["Tube1_inflow_duty"] or state["Tube1_outflow_duty"]
 
     def make_outdated(self):
         """Label the cached state as outdated."""
@@ -179,19 +180,30 @@ class ClaireDevice:
             return self.state.state
 
         # Ask for new state reading.
+        size_buffer = self.last_printed_buf_line
         self.write('1;')
 
         # Wait for the state to be received.
+        total_wait = 0
         while True:
-            sleep(3.5)  # Getting filtered state takes some time, each sensor reading takes 50-100 ms
-            state = self.get_last_raw_state()
-            if state:
-                # Convert distance to water level
-                state["Tube0_water_mm"] = round(self.convert_distance_to_level(state["Tube0_water_mm"]), 1)
-                state["Tube1_water_mm"] = round(self.convert_distance_to_level(state["Tube1_water_mm"]), 1)
-                self.state = ClaireState()
-                self.state.set_state(state)
-                return state
+            if self.last_printed_buf_line > size_buffer and self.read_buffer[-1][0] == '{':
+                # If we received a line starting with {, we have received the new state.
+                break
+
+            sleep(0.1)
+            total_wait += 0.1
+            if total_wait > COMMUNICATION_TIMEOUT:
+                raise RuntimeError("Waiting too long for state to be communicated.")
+
+        # New state retrieved, parse it.
+        state = self.get_last_raw_state()
+        if state:
+            # Convert distance to water level
+            state["Tube0_water_mm"] = round(self.convert_distance_to_level(state["Tube0_water_mm"]), 1)
+            state["Tube1_water_mm"] = round(self.convert_distance_to_level(state["Tube1_water_mm"]), 1)
+            self.state = ClaireState()
+            self.state.set_state(state)
+            return state
 
     def get_last_raw_state(self):
         """Get the last raw state of the device without polling."""
