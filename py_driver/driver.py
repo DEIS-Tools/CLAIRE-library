@@ -9,6 +9,7 @@ TAG = "DRIVER:"
 CLAIRE_VERSION = "v0.1.11"
 TUBE_MAX_LEVEL = 900
 DEBUG = True
+COMMUNICATION_TIMEOUT = 10
 
 
 class SensorError(Exception):
@@ -183,10 +184,16 @@ class ClaireDevice:
         self.write('1;')
 
         # Wait for the state to be received.
+        total_wait = 0
         while True:
-            if self.last_printed_buf_line > size_buffer:
+            if self.last_printed_buf_line > size_buffer and self.read_buffer[-1][0] == '{':
+                # If we received a line starting with {, we have received the new state.
                 break
+
             sleep(0.1)
+            total_wait += 0.1
+            if total_wait > COMMUNICATION_TIMEOUT:
+                raise RuntimeError("Waiting too long for state to be communicated.")
 
         # New state retrieved, parse it.
         state = self.get_last_raw_state()
