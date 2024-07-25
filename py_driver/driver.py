@@ -59,7 +59,7 @@ class ClaireState:
         :param state: The new state to cache.
         """
         self.state = state
-        self.outdated = state["Tube0_inflow_duty"] or state["Tube0_outflow_duty"] or state["Tube1_inflow_duty"] or state["Tube0_outflow_duty"]
+        self.outdated = state["Tube0_inflow_duty"] or state["Tube0_outflow_duty"] or state["Tube1_inflow_duty"] or state["Tube1_outflow_duty"]
 
     def make_outdated(self):
         """Label the cached state as outdated."""
