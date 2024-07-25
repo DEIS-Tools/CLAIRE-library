@@ -13,7 +13,7 @@ DEBUG = True
 
 class SensorError(Exception):
     """
-    Error when sensor reading fails (i.e., returns -1)
+    Error when sensor reading fails (i.e., returns -1).
     """
     pass
 
@@ -36,23 +36,40 @@ class ColorPrinting(object):
 
     @staticmethod
     def print_blue(text):
+        """
+        Print the text in blue to standard output.
+
+        :param text: The text to print.
+        """
         print(f"{ColorPrinting.OKBLUE}{text}{ColorPrinting.ENDC}")
 
 
 class ClaireState:
+    """
+    The state of the Claire demonstrator. Can be used to cache the state.
+    """
     def __init__(self):
         self.state = None
         self.outdated = True
 
     def set_state(self, state):
+        """
+        Set the cached state to the provided state. Assumes that the provided state is actual.
+
+        :param state: The new state to cache.
+        """
         self.state = state
         self.outdated = False
 
     def make_outdated(self):
+        """Label the cached state as outdated."""
         self.outdated = True
 
 
 class ClaireDevice:
+    """
+    Class that represents the Claire demonstrator setup.
+    """
     def __init__(self, port):
         self.device = port
         self.heartbeat = time()
@@ -99,15 +116,25 @@ class ClaireDevice:
                 break
 
     def buf_lines(self) -> list[str]:
-        """Return the lines in the buffer"""
+        """
+        Return the lines in the buffer.
+
+        :return: The lines in the buffer."""
         return self.read_buffer[:]
 
     def buf_lines_from(self, start) -> list[str]:
-        """Return the lines in the buffer from start"""
+        """
+        Return the lines in the buffer from the provided start.
+
+        :param: The start index to read the buffer.
+        :return: The content of the buffer from start."""
         return self.read_buffer[start:]
 
     def last_buf_lines(self) -> list[str]:
-        """Return the lines in the buffer from last_printed_buf_line"""
+        """
+        Return the lines in the buffer from :attr:`self.last_printed_buf_line`.
+
+        :return: The content of the buffer from :attr:`self.last_printed_buf_line`."""
         return self.buf_lines_from(self.last_printed_buf_line + 1)
 
     def print_buf(self):
@@ -132,7 +159,7 @@ class ClaireDevice:
             self.last_printed_buf_line = len(self.read_buffer) - 1
 
     def check_version(self):
-        """Check the version of the software on the Arduino"""
+        """Check the version of the software on the Arduino."""
         # Version number is on the first line, as that reads "Initialising CLAIRE water management <version>"
         line = self.read_buffer[0]
         words = line.split(' ')
@@ -146,7 +173,7 @@ class ClaireDevice:
                                             f"Python script is constructed for version {CLAIRE_VERSION}."
 
     def get_state(self):
-        """Get the last state of the device."""
+        """Get the last state of the device. If cached state is outdated, a new sensor reading is requested."""
         # Return cached state if not outdated.
         if not self.state.outdated:
             return self.state.state
@@ -167,7 +194,7 @@ class ClaireDevice:
                 return state
 
     def get_last_raw_state(self):
-        """Get the last raw state of the device without polling"""
+        """Get the last raw state of the device without polling."""
         # take buf backwards and try to coerce every line into dict
         for line in reversed(self.buf_lines()):
             try:
@@ -177,11 +204,15 @@ class ClaireDevice:
                 pass
 
     def print_state(self):
-        """Print state of the system"""
+        """Print state of the system."""
         print(f'{TAG} Got state: {self.state}')
 
     def write(self, data):
-        """Write data to the serial port."""
+        """
+        Write data to the serial port.
+
+        :param data: The data to write to the serial port.
+        """
         # Can only send new command if Arduino is not busy.
         assert not self.busy
         if DEBUG:
@@ -190,12 +221,18 @@ class ClaireDevice:
         sleep(0.1)  # Sleep slightly to take communication delays into account
 
     def close(self):
+        """Close the serial connection."""
         self.stopped = True
         self.read_thread.join()  # Wait until read thread has been stopped.
         self.ser.close()
 
     def set_water_level(self, tube, level):
-        """Set the water level in the selected tube to the provided height"""
+        """
+        Set the water level in the selected tube to the provided height.
+
+        :param tube: The tube to set the water level, should be value from [1,2].
+        :param level: The desired water level, should be value from [0,TUBE_MAX_LEVEL].
+        """
         assert tube == 1 or tube == 2
         assert 0 <= level <= TUBE_MAX_LEVEL
         self.write(f"5 {tube} {self.convert_level_to_distance(level)};")
@@ -203,7 +240,12 @@ class ClaireDevice:
         self.state.make_outdated()
 
     def set_inflow(self, tube, rate):
-        """Set the inflow in the tube to the provided rate"""
+        """
+        Set the inflow in the tube to the provided rate.
+
+        :param tube: The tube to set the water level, should be value from [1,2].
+        :param rate: The desired inflow rate, should be value from [0,100].
+        """
         assert tube == 1 or tube == 2
         assert 0 <= rate <= 100
         pump = (tube - 1) * 2 + 1
@@ -211,7 +253,12 @@ class ClaireDevice:
         self.state.make_outdated()
 
     def set_outflow(self, tube, rate):
-        """Set the outflow in the tube to the provided rate"""
+        """
+        Set the outflow in the tube to the provided rate.
+
+        :param tube: The tube to set the water level, should be value from [1,2].
+        :param rate: The desired outflow rate, should be value from [0,100].
+        """
         assert tube == 1 or tube == 2
         assert 0 <= rate <= 100
         pump = tube * 2
@@ -220,17 +267,26 @@ class ClaireDevice:
 
     @staticmethod
     def convert_distance_to_level(distance):
-        """Convert sensor distance to water level"""
+        """
+        Convert sensor distance to water level.
+
+        :param distance: The distance from the sensor to the measured water surface.
+        """
         if distance < 0:
             raise SensorError()
         return TUBE_MAX_LEVEL - distance
 
     @staticmethod
     def convert_level_to_distance(level):
-        """Convert water level to sensor distance"""
+        """
+        Convert water level to sensor distance.
+
+        :param level: The water level to convert.
+        """
         return TUBE_MAX_LEVEL - level
 
     def wait_until_free(self):
+        """Wait until the device is free."""
         while True:
             if not self.busy:
                 return
