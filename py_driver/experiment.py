@@ -3,14 +3,14 @@ from time import sleep
 
 # Insert the name of the usb port, which might be different for different devices.
 # An easy way to get the port name is to use the Arduino IDE.
-# PORT = '/dev/ttyUSB0'
-PORT = '/dev/cu.usbserial-1420'
+PORT = '/dev/ttyUSB0'
+# PORT = '/dev/cu.usbserial-1420'
 
 
 def example_experiment():
     claire = driver.ClaireDevice(PORT)
     state = claire.get_state()  # get current state of device
-    claire.print_state(state)
+    claire.print_state()
     print(f'Current height of TUBE1: {state["Tube1_water_mm"]}')
 
     claire.set_inflow(1, 100)
