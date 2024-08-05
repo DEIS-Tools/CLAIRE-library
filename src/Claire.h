@@ -70,20 +70,20 @@ class SensorReading {
 
 // default pumps (uses double memory as header imported twice)
 namespace default_pump_defs {
-static Output TUBE0_IN { 2, "Tube0_inflow", 0, true, -1 };
-static Output TUBE0_OUT { 3, "Tube0_outflow", 0, false, 8 };
-static Output TUBE1_IN { 4, "Tube1_inflow", 1, true, -1 }; 
-static Output TUBE1_OUT { 5, "Tube1_outflow", 1, false, 9 };
+static Output TUBE1_IN { 2, "Tube1_inflow", 1, true, -1 };
+static Output TUBE1_OUT { 3, "Tube1_outflow", 1, false, 8 };
+static Output TUBE2_IN { 4, "Tube2_inflow", 2, true, -1 }; 
+static Output TUBE2_OUT { 5, "Tube2_outflow", 2, false, 9 };
 static Output STREAM_IN { 6, "Stream_inflow", -1, false, -1 };
 static Output STREAM_OUT { 7, "Stream_outflow", -1, false, -1 };
 }
 
 const int PUMP_COUNT = 6;
 static Output** default_pumps = new Output*[PUMP_COUNT + 1] {
-  &default_pump_defs::TUBE0_IN,
-  &default_pump_defs::TUBE0_OUT,
   &default_pump_defs::TUBE1_IN,
   &default_pump_defs::TUBE1_OUT,
+  &default_pump_defs::TUBE2_IN,
+  &default_pump_defs::TUBE2_OUT,
   &default_pump_defs::STREAM_IN,
   &default_pump_defs::STREAM_OUT,
   nullptr
@@ -91,14 +91,14 @@ static Output** default_pumps = new Output*[PUMP_COUNT + 1] {
 
 
 namespace default_sensor_defs {
-static const auto TUBE0_HEIGHT = Sensor{ 10, "Tube0_water_mm", 0 };
-static const auto TUBE1_HEIGHT = Sensor{ 11, "Tube1_water_mm", 1 };
+static const auto TUBE1_HEIGHT = Sensor{ 10, "Tube1_water_mm", 0 };
+static const auto TUBE2_HEIGHT = Sensor{ 11, "Tube2_water_mm", 1 };
 }
 
 const int SENSOR_COUNT = 2;
 static Sensor default_sensors[SENSOR_COUNT] = {
-  default_sensor_defs::TUBE0_HEIGHT,
-  default_sensor_defs::TUBE1_HEIGHT
+  default_sensor_defs::TUBE1_HEIGHT,
+  default_sensor_defs::TUBE2_HEIGHT
 };
 
 
