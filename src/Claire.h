@@ -6,9 +6,6 @@
 
 #define VERSION "0.1.11"
 
-#define OUTPUT_GPIO_MIN 2
-#define OUTPUT_GPIO_MAX 7
-
 #define SENSOR_SAMPLE_SIZE 10
 #define SENSOR_MIN_VALUE 0
 #define SENSOR_MAX_VALUE 1023
