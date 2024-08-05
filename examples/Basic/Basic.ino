@@ -11,28 +11,28 @@ void setup() {
   claire.DEBUG = true;
   claire.VERBOSE = false;
 
-  // setup 9600 baud for serial connection
-  Serial.begin(9600);
+  // setup 115200 baud for serial connection
+  Serial.begin(115200);
 
   claire.begin();
 }
 
 void loop() {
-  Serial.println(claire.getRange(TUBE0_HEIGHT));
-  Serial.println("Set duty TUBE0_IN:");
-  int ok = claire.setPump(TUBE0_IN, getDuty());
-  
-  Serial.println(claire.getRange(TUBE0_HEIGHT));
-  Serial.println("Set duty TUBE0_OUT:");
-  ok = claire.setPump(TUBE0_OUT, getDuty());
-
   Serial.println(claire.getRange(TUBE1_HEIGHT));
   Serial.println("Set duty TUBE1_IN:");
-  ok = claire.setPump(TUBE1_IN, getDuty());
-
+  int ok = claire.setPump(TUBE1_IN, getDuty());
+  
   Serial.println(claire.getRange(TUBE1_HEIGHT));
   Serial.println("Set duty TUBE1_OUT:");
   ok = claire.setPump(TUBE1_OUT, getDuty());
+
+  Serial.println(claire.getRange(TUBE2_HEIGHT));
+  Serial.println("Set duty TUBE2_IN:");
+  ok = claire.setPump(TUBE2_IN, getDuty());
+
+  Serial.println(claire.getRange(TUBE2_HEIGHT));
+  Serial.println("Set duty TUBE2_OUT:");
+  ok = claire.setPump(TUBE2_OUT, getDuty());
 
   digitalWrite(LED_BUILTIN, !ok);
 }

@@ -30,9 +30,9 @@ Usage: cmd [args] ;
  2;                  - Quick status (1 sample) of system in k:v
  3;                  - Emergency stop all actuators
  4 <pump> <flow>;    - Set pump flow. 0 = off, 1..100 = proportional flow-rate
-   <pump> = {1: TUBE0_IN, 2: TUBE0_OUT, 3: TUBE1_IN, 4: TUBE1_OUT, 5: STREAM_OUT}
+   <pump> = {1: TUBE1_IN, 2: TUBE1_OUT, 3: TUBE2_IN, 4: TUBE2_OUT, 5: STREAM_OUT}
  5 <tube> <level>;   - Set tube level in millimeters.
-   <tube> = {1: TUBE0, 2: TUBE1}
+   <tube> = {1: TUBE1, 2: TUBE2}
  6;                  - Primes the pumps on a newly filled system
  7;                  - Reset system: Empty all reservoirs, then turn all pumps off
  8;                  - Tear-down: Empty the system and water into separate bucket

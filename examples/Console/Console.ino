@@ -103,16 +103,16 @@ void OnSetPump() {
 
   switch (tube) {
     case 1:
-      claire.setPump(TUBE0_IN, duty);
-      break;
-    case 2:
-      claire.setPump(TUBE0_OUT, duty);
-      break;
-    case 3:
       claire.setPump(TUBE1_IN, duty);
       break;
-    case 4:
+    case 2:
       claire.setPump(TUBE1_OUT, duty);
+      break;
+    case 3:
+      claire.setPump(TUBE2_IN, duty);
+      break;
+    case 4:
+      claire.setPump(TUBE2_OUT, duty);
       break;
     case 5:
       claire.setPump(STREAM_IN, duty);
@@ -142,12 +142,12 @@ void OnSetLevel() {
 
   switch (tube) {
     case 1:
-      claire.setLevel(TUBE0_IN, TUBE0_OUT, level);
-      Serial.println("TUBE0 range: " + String(claire.getRange(claire.sensors[0])));
+      claire.setLevel(TUBE1_IN, TUBE1_OUT, level);
+      Serial.println("TUBE1 range: " + String(claire.getRange(claire.sensors[0])));
       break;
     case 2:
-      claire.setLevel(TUBE1_IN, TUBE1_OUT, level);
-      Serial.println("TUBE1 range: " + String(claire.getRange(claire.sensors[1])));
+      claire.setLevel(TUBE2_IN, TUBE2_OUT, level);
+      Serial.println("TUBE2 range: " + String(claire.getRange(claire.sensors[1])));
       break;
     default:
       Serial.println("Unknown tube '" + String(tube) + "' ignoring command");
@@ -172,13 +172,13 @@ void OnPrime() {
   for (auto ms : cycles) {
     if (pump) {
       Serial.print("prime: " + String(ms) + " ms, ");
-      claire.setPump(TUBE0_IN, 100);
       claire.setPump(TUBE1_IN, 100);
+      claire.setPump(TUBE2_IN, 100);
       delay(ms);
     } else {
       Serial.print("delay: " + String(ms) + " ms, ");
-      claire.setPump(TUBE0_IN, 0);
       claire.setPump(TUBE1_IN, 0);
+      claire.setPump(TUBE2_IN, 0);
       delay(ms);
     }
     pump = !pump;
@@ -195,10 +195,10 @@ void OnPrime() {
 void OnReset() {
   Serial.println("Emptying all tubes into reservoir");
   if (VERBOSE) Serial.println("Emptying TUBE0");
-  bool ok_tube0 = claire.setLevel(TUBE0_IN, TUBE0_OUT, TUBE_MAX_LEVEL);
-  if (VERBOSE) Serial.println("Emptying TUBE1");
   bool ok_tube1 = claire.setLevel(TUBE1_IN, TUBE1_OUT, TUBE_MAX_LEVEL);
-  if (ok_tube0 && ok_tube1) {
+  if (VERBOSE) Serial.println("Emptying TUBE1");
+  bool ok_tube2 = claire.setLevel(TUBE2_IN, TUBE2_OUT, TUBE_MAX_LEVEL);
+  if (ok_tube1 && ok_tube2) {
     Serial.println("All tubes emptied successfully");
   }
 }
@@ -207,8 +207,8 @@ void OnReset() {
 void OnEmpty() {
   // first reset, then pump out of designated tube
   OnReset();
-  Serial.println("WARN: Running pump: " + String(TUBE0_IN.name) + " at 100% until user resets!");
-  claire.setPump(TUBE0_IN, 100);
+  Serial.println("WARN: Running pump: " + String(TUBE1_IN.name) + " at 100% until user resets!");
+  claire.setPump(TUBE1_IN, 100);
 }
 
 void OnTest() {
@@ -231,9 +231,9 @@ void ShowCommands() {
   Serial.println(" 2;                  - Quick status (1 sample) of system in k:v");
   Serial.println(" 3;                  - Emergency stop all actuators");
   Serial.println(" 4 <pump> <flow>;    - Set pump flow. 0 = off, 1..100 = proportional flow-rate");
-  Serial.println("   <pump> = {1: TUBE0_IN, 2: TUBE0_OUT, 3: TUBE1_IN, 4: TUBE1_OUT, 5: STREAM_OUT}");
+  Serial.println("   <pump> = {1: TUBE1_IN, 2: TUBE1_OUT, 3: TUBE2_IN, 4: TUBE2_OUT, 5: STREAM_OUT}");
   Serial.println(" 5 <tube> <level>;   - Set tube level in millimeters.");
-  Serial.println("   <tube> = {1: TUBE0, 2: TUBE1}");
+  Serial.println("   <tube> = {1: TUBE1, 2: TUBE2}");
   Serial.println(" 6;                  - Primes the pumps on a newly filled system");
   Serial.println(" 7;                  - Reset system: Empty all reservoirs, then turn all pumps off");
   Serial.println(" 8;                  - Tear-down: Empty the system and water into separate bucket");

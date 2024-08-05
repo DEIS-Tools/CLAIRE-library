@@ -21,7 +21,7 @@ bool Claire::begin() {
     if (pumps[i]->pin == -1) {
       if (ok) {
         // on first error, print legend FIXME
-        Serial.println("Indicies. Containers: 0: Tube0, 1: Tube1, 2: Stream-res. Pumps 0: Inflow, 1: outflow.");
+        Serial.println("Indicies. Containers: 0: Tube1, 1: Tube2, 2: Stream-res. Pumps 0: Inflow, 1: outflow.");
       }   
       Serial.println("ERROR: Pump PWM pin unset for resource: " + String(pumps[i]->name) + " pin: " + String(pumps[i]->pin));
       ok = false;
@@ -280,12 +280,12 @@ bool Claire::setLevel(Output &in, Output &out, int level) {
     return false;
   }
 
-  Sensor sensor = default_sensor_defs::TUBE0_HEIGHT;
+  Sensor sensor = default_sensor_defs::TUBE1_HEIGHT;
 
   if (in.tube == 0) {
-    sensor = default_sensor_defs::TUBE0_HEIGHT; 
+    sensor = default_sensor_defs::TUBE1_HEIGHT; 
   } else if (in.tube == 1) {
-    sensor = default_sensor_defs::TUBE1_HEIGHT;
+    sensor = default_sensor_defs::TUBE2_HEIGHT;
   } else {
     Serial.println("ERROR: Unknown tube referenced, aborting setLevel");
     return false;
