@@ -143,11 +143,11 @@ void OnSetLevel() {
   switch (tube) {
     case 1:
       claire.setLevel(TUBE1_IN, TUBE1_OUT, level);
-      Serial.println("TUBE0 range: " + String(claire.getRange(claire.sensors[0])));
+      Serial.println("TUBE1 range: " + String(claire.getRange(claire.sensors[0])));
       break;
     case 2:
       claire.setLevel(TUBE2_IN, TUBE2_OUT, level);
-      Serial.println("TUBE1 range: " + String(claire.getRange(claire.sensors[1])));
+      Serial.println("TUBE2 range: " + String(claire.getRange(claire.sensors[1])));
       break;
     default:
       Serial.println("Unknown tube '" + String(tube) + "' ignoring command");
@@ -195,10 +195,10 @@ void OnPrime() {
 void OnReset() {
   Serial.println("Emptying all tubes into reservoir");
   if (VERBOSE) Serial.println("Emptying TUBE0");
-  bool ok_tube0 = claire.setLevel(TUBE1_IN, TUBE1_OUT, TUBE_MAX_LEVEL);
+  bool ok_tube1 = claire.setLevel(TUBE1_IN, TUBE1_OUT, TUBE_MAX_LEVEL);
   if (VERBOSE) Serial.println("Emptying TUBE1");
-  bool ok_tube1 = claire.setLevel(TUBE2_IN, TUBE2_OUT, TUBE_MAX_LEVEL);
-  if (ok_tube0 && ok_tube1) {
+  bool ok_tube2 = claire.setLevel(TUBE2_IN, TUBE2_OUT, TUBE_MAX_LEVEL);
+  if (ok_tube1 && ok_tube2) {
     Serial.println("All tubes emptied successfully");
   }
 }
