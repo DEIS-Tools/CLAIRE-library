@@ -49,6 +49,7 @@ class ClaireState:
     """
     The state of the Claire demonstrator. Can be used to cache the state.
     """
+
     def __init__(self):
         self.state = None
         self.outdated = True
@@ -60,7 +61,8 @@ class ClaireState:
         :param state: The new state to cache.
         """
         self.state = state
-        self.outdated = state["Tube1_inflow_duty"] or state["Tube1_outflow_duty"] or state["Tube2_inflow_duty"] or state["Tube2_outflow_duty"]
+        self.outdated = state["Tube1_inflow_duty"] or state["Tube1_outflow_duty"] or state["Tube2_inflow_duty"] or \
+                        state["Tube2_outflow_duty"]
 
     def make_outdated(self):
         """Label the cached state as outdated."""
@@ -71,6 +73,7 @@ class ClaireDevice:
     """
     Class that represents the Claire demonstrator setup.
     """
+
     def __init__(self, port):
         self.device = port
         self.heartbeat = time()
@@ -90,12 +93,51 @@ class ClaireDevice:
         self.stopped = False
         self.read_buffer = []
         self.last_printed_buf_line = -1
+
         self.read_thread = threading.Thread(target=self._read_lines)
         self.read_thread.daemon = True
         self.read_thread.start()
+
+        self.read_thread = threading.Thread(target=self._underflow_check)
+        self.read_thread.daemon = True
+        self.read_thread.start()
+
         print(f'{TAG} Device connected to {port}, waiting for initialization...')
         sleep(3)
         self.check_version()
+
+    def alive(self):
+        """Check if the device is still alive within bound."""
+        return time() - self.heartbeat < COMMUNICATION_TIMEOUT
+
+    def ready(self):
+        return not self.busy
+
+    def _underflow_check(self):
+        TAG = "UNDERFLOW_CHECK"
+        while True:
+            if self.alive():
+                if self.ready():
+                    # check if water level is below 0
+                    self.write('1;')
+                    self.update_state()
+
+                    tube = None
+                    if self.state.state["Tube1_water_mm"] < TUBE_MAX_LEVEL:
+                        tube = ("Tube1_water_mm", self.state.state["Tube1_water_mm"])
+                    elif self.state.state["Tube2_water_mm"] < TUBE_MAX_LEVEL:
+                        tube = ("Tube2_water_mm", self.state.state["Tube2_water_mm"])
+
+                    if tube is not None:
+                        print(f'{TAG}: WARN: Low water level detected {tube[0]}: {tube[1]}, ')
+
+                else:
+                    if DEBUG:
+                        print(f'{TAG}: Device is busy.')
+            else:
+                if DEBUG:
+                    print(f'{TAG}: Device is not alive.')
+            sleep(5)
 
     def _read_lines(self):
         """Read lines from the serial port and add to the buffer in a thread to not block the main thread."""
@@ -107,9 +149,9 @@ class ClaireDevice:
                 self.read_buffer.extend(new_lines)
                 if IMMEDIATE_OUTPUT:
                     self.print_new_lines_buf()
-                # Check whether the new lines contain the finished signal.
+                # Check whether the new lines contain the ready signal.
                 for line in new_lines:
-                    if line == "Finished":
+                    if line == "CLAIRE-READY":
                         self.busy = False
 
             # Stop reading lines.
@@ -173,7 +215,10 @@ class ClaireDevice:
         assert words[-1] == CLAIRE_VERSION, f"The CLAIRE software on the Arduino is version {words[-1]}, while this " \
                                             f"Python script is constructed for version {CLAIRE_VERSION}."
 
-    def get_state(self):
+        # check if device is ready
+        assert self.ready()
+
+    def update_state(self):
         """Get the last state of the device. If cached state is outdated, a new sensor reading is requested."""
         # Return cached state if not outdated.
         if not self.state.outdated:
