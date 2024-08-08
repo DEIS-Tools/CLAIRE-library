@@ -116,28 +116,38 @@ class ClaireDevice:
     def _underflow_check(self):
         TAG = "UNDERFLOW_CHECK"
         while True:
-            if self.alive():
-                if self.ready():
-                    # check if water level is below 0
-                    self.write('1;')
-                    self.update_state()
-
-                    tube = None
-                    if self.state.state["Tube1_water_mm"] < TUBE_MAX_LEVEL:
-                        tube = ("Tube1_water_mm", self.state.state["Tube1_water_mm"])
-                    elif self.state.state["Tube2_water_mm"] < TUBE_MAX_LEVEL:
-                        tube = ("Tube2_water_mm", self.state.state["Tube2_water_mm"])
-
-                    if tube is not None:
-                        print(f'{TAG}: WARN: Low water level detected {tube[0]}: {tube[1]}, ')
-
-                else:
-                    if DEBUG:
-                        print(f'{TAG}: Device is busy.')
-            else:
+            # sanity check
+            if not self.alive():
                 if DEBUG:
                     print(f'{TAG}: Device is not alive.')
-            sleep(5)
+                sleep(5)
+                continue
+            if not self.ready():
+                if DEBUG:
+                    print(f'{TAG}: Device is busy.')
+                sleep(5)
+                continue
+
+            # check if water level is below 0
+            self.write('1;')
+            self.update_state()
+
+            # check underflows
+            if self.state.state["Tube1_water_mm"] < TUBE_MAX_LEVEL:
+                # if outflow is active while inflow is stopped, error out
+                if self.state.state["Tube1_outflow_duty"] > 0 and self.state.state["Tube1_inflow_duty"] == 0:
+                    self.set_outflow(1, 0)
+                    print(f'{TAG}: WARN: Low water level detected in tube 1: {self.state.state["Tube1_water_mm"]}. Stopped outflow')
+
+            elif self.state.state["Tube2_water_mm"] < TUBE_MAX_LEVEL:
+                # if outflow is active while inflow is stopped, error out
+                if self.state.state["Tube2_outflow_duty"] > 0 and self.state.state["Tube2_inflow_duty"] == 0:
+                    self.set_outflow(2, 0)
+                    print(f'{TAG}: WARN: Low water level detected in tube 2: {self.state.state["Tube2_water_mm"]}. Stopped outflow')
+
+            else:
+                if DEBUG:
+                    print(f'{TAG}: No underflow detected in watchdog.')
 
     def _read_lines(self):
         """Read lines from the serial port and add to the buffer in a thread to not block the main thread."""
