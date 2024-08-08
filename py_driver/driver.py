@@ -49,7 +49,6 @@ class ClaireState:
     """
     The state of the Claire demonstrator. Can be used to cache the state.
     """
-
     def __init__(self):
         self.state = None
         self.outdated = True
@@ -61,8 +60,7 @@ class ClaireState:
         :param state: The new state to cache.
         """
         self.state = state
-        self.outdated = state["Tube1_inflow_duty"] or state["Tube1_outflow_duty"] or state["Tube2_inflow_duty"] or \
-                        state["Tube2_outflow_duty"]
+        self.outdated = state["Tube1_inflow_duty"] or state["Tube1_outflow_duty"] or state["Tube2_inflow_duty"] or state["Tube2_outflow_duty"]
 
     def make_outdated(self):
         """Label the cached state as outdated."""
@@ -73,7 +71,6 @@ class ClaireDevice:
     """
     Class that represents the Claire demonstrator setup.
     """
-
     def __init__(self, port):
         self.device = port
         self.heartbeat = time()
@@ -254,8 +251,8 @@ class ClaireDevice:
         state = self.get_last_raw_state()
         if state:
             # Convert distance to water level
-            state["Tube1_water_mm"] = round(self.convert_distance_to_level(state["Tube1_water_mm"]), 1)
-            state["Tube2_water_mm"] = round(self.convert_distance_to_level(state["Tube2_water_mm"]), 1)
+            state["Tube1_sonar_dist_mm"] = round(self.convert_distance_to_level(state["Tube1_sonar_dist_mm"]), 1)
+            state["Tube2_sonar_dist_mm"] = round(self.convert_distance_to_level(state["Tube2_sonar_dist_mm"]), 1)
             self.state = ClaireState()
             self.state.set_state(state)
             return state
