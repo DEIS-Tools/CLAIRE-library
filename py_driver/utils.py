@@ -4,7 +4,7 @@ import re
 # Compact regex pattern to match Python dictionaries
 dict_pattern = re.compile(
     r'\{\s*"([a-zA-Z_][a-zA-Z0-9_]*)"\s*:\s*(-?\d+(\.\d+)?|"\w*")\s*(,\s*"([a-zA-Z_][a-zA-Z0-9_]*)"\s*:\s*(-?\d+(\.\d+)?|"\w*"))*\s*\}')
-test_string = '{"Tube1_water_mm": -1.00, "Tube2_water_mm": -1.00, "Tube1_inflow_duty": 0,"Tube1_outflow_duty": 0,"Tube2_inflow_duty": 0,"Tube2_outflow_duty": 0,"Stream_inflow_duty": 0,"Stream_outflow_duty": 0}'
+test_string = '{"Tube1_sonar_dist_mm": -1.00, "Tube2_sonar_dist_mm": -1.00, "Tube1_inflow_duty": 0,"Tube1_outflow_duty": 0,"Tube2_inflow_duty": 0,"Tube2_outflow_duty": 0,"Stream_inflow_duty": 0,"Stream_outflow_duty": 0}'
 
 
 def is_dict(s: str) -> bool:
@@ -24,7 +24,7 @@ def is_dict(s: str) -> bool:
 def parse_str_dict(s: str) -> dict:
     """
     >>> parse_str_dict(test_string)
-    {'Tube1_water_mm': -1.0, 'Tube2_water_mm': -1.0, 'Tube1_inflow_duty': 0, 'Tube1_outflow_duty': 0, 'Tube2_inflow_duty': 0, 'Tube2_outflow_duty': 0, 'Stream_inflow_duty': 0, 'Stream_outflow_duty': 0}
+    {'Tube1_sonar_dist_mm': -1.0, 'Tube2_sonar_dist_mm': -1.0, 'Tube1_inflow_duty': 0, 'Tube1_outflow_duty': 0, 'Tube2_inflow_duty': 0, 'Tube2_outflow_duty': 0, 'Stream_inflow_duty': 0, 'Stream_outflow_duty': 0}
 
     >>> parse_str_dict('{"a": 1, "b": 2}')
     {'a': 1, 'b': 2}

@@ -199,8 +199,8 @@ class ClaireDevice:
         state = self.get_last_raw_state()
         if state:
             # Convert distance to water level
-            state["Tube1_water_mm"] = round(self.convert_distance_to_level(state["Tube1_water_mm"]), 1)
-            state["Tube2_water_mm"] = round(self.convert_distance_to_level(state["Tube2_water_mm"]), 1)
+            state["Tube1_sonar_dist_mm"] = round(self.convert_distance_to_level(state["Tube1_sonar_dist_mm"]), 1)
+            state["Tube2_sonar_dist_mm"] = round(self.convert_distance_to_level(state["Tube2_sonar_dist_mm"]), 1)
             self.state = ClaireState()
             self.state.set_state(state)
             return state
