@@ -91,8 +91,8 @@ static Output** default_pumps = new Output*[PUMP_COUNT + 1] {
 
 
 namespace default_sensor_defs {
-static const auto TUBE1_HEIGHT = Sensor{ 10, "Tube1_water_mm", 0 };
-static const auto TUBE2_HEIGHT = Sensor{ 11, "Tube2_water_mm", 1 };
+static const auto TUBE1_HEIGHT = Sensor{ 10, "Tube1_sonar_dist_mm", 0 };
+static const auto TUBE2_HEIGHT = Sensor{ 11, "Tube2_sonar_dist_mm", 1 };
 }
 
 const int SENSOR_COUNT = 2;
