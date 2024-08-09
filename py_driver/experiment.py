@@ -9,8 +9,8 @@ PORT = '/dev/cu.usbserial-1420'
 
 def example_experiment():
     claire = driver.ClaireDevice(PORT)
-    state = claire.get_state()  # get current state of device
-    claire.print_state(state)
+    state = claire.update_state()  # get current state of device
+    claire.print_state()
     print(f'Current height of TUBE1: {state["Tube1_sonar_dist_mm"]}')
 
     claire.set_inflow(1, 100)

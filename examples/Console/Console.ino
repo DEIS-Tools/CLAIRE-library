@@ -46,14 +46,20 @@ void attachCommandCallbacks() {
   cmdMessenger.attach(kVerbosity, OnVerbosity);
 }
 
+void OnReady() {
+  Serial.println("CLAIRE-READY");
+}
+
 // Called when a received command has no attached function
 void OnUnknownCommand() {
   Serial.println("This command is unknown!");
   ShowCommands();
+  OnReady();
 }
 
 void OnCommandList() {
   ShowCommands();
+  OnReady();
 }
 
 String getStatus(bool filtered) {
@@ -79,16 +85,19 @@ String getStatus(bool filtered) {
 void OnStatus() {
   // do default samples
   Serial.println(getStatus(true));
+  OnReady();
 }
 
 void OnQuickStatus() {
   // only do one sample
   Serial.println(getStatus(false));
+  OnReady();
 }
 
 void OnStop() {
   claire.eStop();
   Serial.println("Emergency stop applied! Expect state of demonstrator to be undefined.");
+  OnReady();
 }
 
 void OnSetPump() {
@@ -124,6 +133,7 @@ void OnSetPump() {
       Serial.println("Unknown pump referenced (" + String(tube) + "), ignoring command");
       return;
   }
+  OnReady();
 }
 
 // sets water level in a tube to arg
@@ -155,7 +165,7 @@ void OnSetLevel() {
   }
 
   // Notify that command is finished.
-  Serial.println("Finished");
+  OnReady();
 }
 
 void OnPrime() {
@@ -188,7 +198,7 @@ void OnPrime() {
   }
 
   // Notify that command is finished.
-  Serial.println("Finished");
+  OnReady();
 }
 
 // empty all containers into res.
@@ -201,6 +211,7 @@ void OnReset() {
   if (ok_tube1 && ok_tube2) {
     Serial.println("All tubes emptied successfully");
   }
+  OnReady();
 }
 
 
@@ -209,10 +220,12 @@ void OnEmpty() {
   OnReset();
   Serial.println("WARN: Running pump: " + String(TUBE1_IN.name) + " at 100% until user resets!");
   claire.setPump(TUBE1_IN, 100);
+  OnReady();
 }
 
 void OnTest() {
   claire.testOutput();
+  OnReady(); // not reachable unless err
 }
 
 void OnVerbosity() {
@@ -221,6 +234,7 @@ void OnVerbosity() {
   claire.DEBUG = DEBUG;
   claire.VERBOSE = VERBOSE;
   Serial.println("Verbose: " + String(VERBOSE) + " debug: " + String(DEBUG));
+  OnReady();
 }
 
 // Show available commands
@@ -259,6 +273,9 @@ void setup() {
 
   // Show command list
   ShowCommands();
+
+  // Give ready signal when init is finished
+  OnReady();
 }
 
 // Loop function
