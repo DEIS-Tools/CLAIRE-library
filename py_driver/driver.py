@@ -7,7 +7,7 @@ import utils
 
 IMMEDIATE_OUTPUT = True
 TAG = "DRIVER:"
-CLAIRE_VERSION = "v0.1.12"
+CLAIRE_VERSION = "v0.1.13"
 TUBE_MAX_LEVEL = 900
 DEBUG = True
 COMMUNICATION_TIMEOUT = 10
@@ -235,7 +235,7 @@ class ClaireDevice:
         # check if device is ready
         assert self.ready()
 
-    def update_state(self):
+    def update_state(self, tube=None, quick=False):
         """Get the last state of the device. If cached state is outdated, a new sensor reading is requested."""
         # Return cached state if not outdated.
         if not self.state.outdated and self.state.last_update >= time() - COMMUNICATION_TIMEOUT:
@@ -243,7 +243,20 @@ class ClaireDevice:
 
         # Ask for new state reading.
         size_buffer = self.last_printed_buf_line
-        self.write('1;')
+
+        arg = ""
+
+        if quick:
+            arg += "2"
+        else:
+            arg += "1"
+
+        if tube:
+            arg += f" {tube};"
+        else:
+            arg += ";"
+
+        self.write(arg)
 
         # Wait for the state to be received.
         total_wait = 0

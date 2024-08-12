@@ -62,13 +62,24 @@ void OnCommandList() {
   OnReady();
 }
 
-String getStatus(bool filtered) {
+String getStatus(bool filtered, int tube = 0) {
   // Construct dict from demonstrator state and report at end.
   // Error reporting is handled by called functions, and sentinel (-1) is used for error state.
+
+  if (0 > tube || tube > 2) {
+    return "Error: Tube index is out of bounds [1..2], for both use value of 0. Received: " + String(tube);
+  }
+
   String fmt = "{";
 
-  for (int i = 0; i < claire.sensorCount; i++) {
-    fmt += "\"" + String(claire.sensors[i].name) + "\": " + claire.getRange(claire.sensors[i], filtered) + ", ";
+  if (tube == 0) {
+    for (int i = 0; i < claire.sensorCount; i++) {
+      fmt += "\"" + String(claire.sensors[i].name) + "\": " + claire.getRange(claire.sensors[i], filtered) + ", ";
+    }
+  }
+
+  if (1 <= tube && tube <= 2) {
+    fmt += "\"" + String(claire.sensors[tube - 1].name) + "\": " + claire.getRange(claire.sensors[tube - 1], filtered) + ", ";
   }
 
   for (int i = 0; i < claire.pumpCount; i++) {
@@ -84,13 +95,21 @@ String getStatus(bool filtered) {
 
 void OnStatus() {
   // do default samples
-  Serial.println(getStatus(true));
+  int tube = 0;
+  if (cmdMessenger.isArgOk()) {
+    tube = cmdMessenger.readInt16Arg();
+  }
+  Serial.println(getStatus(true, tube));
   OnReady();
 }
 
 void OnQuickStatus() {
   // only do one sample
-  Serial.println(getStatus(false));
+  int tube = 0;
+  if (cmdMessenger.isArgOk()) {
+    tube = cmdMessenger.readInt16Arg();
+  }
+  Serial.println(getStatus(false, tube));
   OnReady();
 }
 
@@ -241,8 +260,8 @@ void OnVerbosity() {
 void ShowCommands() {
   Serial.println("Usage: cmd [args] ;");
   Serial.println(" 0;                  - This command list");
-  Serial.println(" 1;                  - Status of system in k:v");
-  Serial.println(" 2;                  - Quick status (1 sample) of system in k:v");
+  Serial.println(" 1 [tube];           - Status of system in k:v. Optionally sample only given tube.");
+  Serial.println(" 2 [tube];           - Quick status (1 sample) of system in k:v. Optionally sample only given tube.");
   Serial.println(" 3;                  - Emergency stop all actuators");
   Serial.println(" 4 <pump> <flow>;    - Set pump flow. 0 = off, 1..100 = proportional flow-rate");
   Serial.println("   <pump> = {1: TUBE1_IN, 2: TUBE1_OUT, 3: TUBE2_IN, 4: TUBE2_OUT, 5: STREAM_OUT}");
