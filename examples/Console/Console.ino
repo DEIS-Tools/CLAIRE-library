@@ -62,13 +62,24 @@ void OnCommandList() {
   OnReady();
 }
 
-String getStatus(bool filtered) {
+String getStatus(bool filtered, int tube = 0) {
   // Construct dict from demonstrator state and report at end.
   // Error reporting is handled by called functions, and sentinel (-1) is used for error state.
+
+  if (0 > tube || tube > 2) {
+    return "Error: Tube index is out of bounds [1..2], for both use value of 0. Received: " + String(tube);
+  }
+
   String fmt = "{";
 
-  for (int i = 0; i < claire.sensorCount; i++) {
-    fmt += "\"" + String(claire.sensors[i].name) + "\": " + claire.getRange(claire.sensors[i], filtered) + ", ";
+  if (tube == 0) {
+    for (int i = 0; i < claire.sensorCount; i++) {
+      fmt += "\"" + String(claire.sensors[i].name) + "\": " + claire.getRange(claire.sensors[i], filtered) + ", ";
+    }
+  }
+
+  if (1 <= tube && tube <= 2) {
+    fmt += "\"" + String(claire.sensors[tube].name) + "\": " + claire.getRange(claire.sensors[tube], filtered) + ", ";
   }
 
   for (int i = 0; i < claire.pumpCount; i++) {
