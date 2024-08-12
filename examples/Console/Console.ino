@@ -261,8 +261,8 @@ void OnVerbosity() {
 void ShowCommands() {
   Serial.println("Usage: cmd [args] ;");
   Serial.println(" 0;                  - This command list");
-  Serial.println(" 1;                  - Status of system in k:v");
-  Serial.println(" 2;                  - Quick status (1 sample) of system in k:v");
+  Serial.println(" 1 [tube];           - Status of system in k:v. Optionally sample only given tube.");
+  Serial.println(" 2 [tube];           - Quick status (1 sample) of system in k:v. Optionally sample only given tube.");
   Serial.println(" 3;                  - Emergency stop all actuators");
   Serial.println(" 4 <pump> <flow>;    - Set pump flow. 0 = off, 1..100 = proportional flow-rate");
   Serial.println("   <pump> = {1: TUBE1_IN, 2: TUBE1_OUT, 3: TUBE2_IN, 4: TUBE2_OUT, 5: STREAM_OUT}");
