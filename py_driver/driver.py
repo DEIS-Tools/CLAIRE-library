@@ -235,7 +235,7 @@ class ClaireDevice:
         # check if device is ready
         assert self.ready()
 
-    def update_state(self):
+    def update_state(self, tube=None, quick=False):
         """Get the last state of the device. If cached state is outdated, a new sensor reading is requested."""
         # Return cached state if not outdated.
         if not self.state.outdated and self.state.last_update >= time() - COMMUNICATION_TIMEOUT:
@@ -243,7 +243,20 @@ class ClaireDevice:
 
         # Ask for new state reading.
         size_buffer = self.last_printed_buf_line
-        self.write('1;')
+
+        arg = ""
+
+        if quick:
+            arg += "2"
+        else:
+            arg += "1"
+
+        if tube:
+            arg += f" {tube};"
+        else:
+            arg += ";"
+
+        self.write(arg)
 
         # Wait for the state to be received.
         total_wait = 0
