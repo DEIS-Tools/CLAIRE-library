@@ -98,7 +98,6 @@ void OnStatus() {
   int tube = 0;
   if (cmdMessenger.isArgOk()) {
     tube = cmdMessenger.readInt16Arg();
-    Serial.println("Got tube: " + String(tube));
   }
   Serial.println(getStatus(true, tube));
   OnReady();
