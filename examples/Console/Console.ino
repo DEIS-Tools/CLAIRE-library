@@ -79,7 +79,7 @@ String getStatus(bool filtered, int tube = 0) {
   }
 
   if (1 <= tube && tube <= 2) {
-    fmt += "\"" + String(claire.sensors[tube].name) + "\": " + claire.getRange(claire.sensors[tube], filtered) + ", ";
+    fmt += "\"" + String(claire.sensors[tube - 1].name) + "\": " + claire.getRange(claire.sensors[tube - 1], filtered) + ", ";
   }
 
   for (int i = 0; i < claire.pumpCount; i++) {
@@ -95,13 +95,22 @@ String getStatus(bool filtered, int tube = 0) {
 
 void OnStatus() {
   // do default samples
-  Serial.println(getStatus(true));
+  int tube = 0;
+  if (cmdMessenger.isArgOk()) {
+    tube = cmdMessenger.readInt16Arg();
+    Serial.println("Got tube: " + String(tube));
+  }
+  Serial.println(getStatus(true, tube));
   OnReady();
 }
 
 void OnQuickStatus() {
   // only do one sample
-  Serial.println(getStatus(false));
+  int tube = 0;
+  if (cmdMessenger.isArgOk()) {
+    tube = cmdMessenger.readInt16Arg();
+  }
+  Serial.println(getStatus(false, tube));
   OnReady();
 }
 
