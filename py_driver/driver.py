@@ -1,7 +1,10 @@
 import sys
 import threading
-from datetime import timedelta
+from dataclasses import dataclass, field
+from datetime import timedelta, datetime
 from time import sleep, time
+from typing import Optional
+
 import serial
 import utils
 
@@ -47,15 +50,24 @@ class ColorPrinting(object):
         print(f"{ColorPrinting.OKBLUE}{text}{ColorPrinting.ENDC}")
 
 
+@dataclass
 class ClaireState:
     """
     The state of the Claire demonstrator. Can be used to cache the state.
     """
+    Tube1_sonar_dist_mm: Optional[float] = None
+    Tube2_sonar_dist_mm: Optional[float] = None
+    Tube1_inflow_duty: Optional[int] = None
+    Tube1_outflow_duty: Optional[int] = None
+    Tube2_inflow_duty: Optional[int] = None
+    Tube2_outflow_duty: Optional[int] = None
+    Stream_inflow_duty: Optional[int] = None
+    Stream_outflow_duty: Optional[int] = None
+    dynamic: Optional[bool] = None
+    last_update: datetime = datetime.now()
 
     def __init__(self):
-        self.state = None
-        self.outdated = True
-        self.last_update = 0
+        self.dynamic = None
 
     def set_state(self, state):
         """
@@ -63,13 +75,32 @@ class ClaireState:
 
         :param state: The new state to cache.
         """
-        self.state = state
-        self.outdated = state["Tube1_inflow_duty"] or state["Tube1_outflow_duty"] or state["Tube2_inflow_duty"] or \
-                        state["Tube2_outflow_duty"]
+        try:
+            self.state = state
+            for key, value in state.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            self.last_update = datetime.now()
+            self.dynamic = state["Tube1_inflow_duty"] or state["Tube1_outflow_duty"] or state["Tube2_inflow_duty"] or \
+                           state["Tube2_outflow_duty"]
+        except Exception as e:
+            print(f"Exception occurred during state update: {e}")
+            raise  # Re-raise the exception after handling
 
-    def make_outdated(self):
-        """Label the cached state as outdated."""
-        self.outdated = True
+    def make_dynamic(self):
+        """
+        Label the cached state as dynamic.
+        When the demonstrator is being acted upon, all state updates are outdated from when they are measured.
+        """
+        self.dynamic = True
+
+    @property
+    def tube1_dist(self) -> Optional[float]:
+        return self.Tube1_sonar_dist_mm
+
+    @property
+    def tube2_dist(self) -> Optional[float]:
+        return self.Tube2_sonar_dist_mm
 
 
 class ClaireDevice:
@@ -79,7 +110,7 @@ class ClaireDevice:
 
     def __init__(self, port):
         self.device = port
-        self.heartbeat = time()
+        self.heartbeat = time()  # last time device was alive
         self.busy = True  # initially unknown, therefore busy
         self.state = ClaireState()
         # read timeout in secs, 1 should be sufficient
@@ -110,6 +141,10 @@ class ClaireDevice:
             sleep(1)
         self.check_version()
 
+        print(f'{TAG} Device initialized. Getting initial state...')
+        self.update_state()
+
+
     def alive(self):
         """Check if the device is still alive within bound."""
         return time() - self.heartbeat < COMMUNICATION_TIMEOUT
@@ -136,19 +171,19 @@ class ClaireDevice:
             self.update_state()
 
             # check underflows
-            if self.state.state["Tube1_sonar_dist_mm"] < TUBE_MAX_LEVEL:
+            if self.state.Tube1_sonar_dist_mm < TUBE_MAX_LEVEL:
                 # if outflow is active while inflow is stopped, error out
-                if self.state.state["Tube1_outflow_duty"] > 0 and self.state.state["Tube1_inflow_duty"] == 0:
+                if self.state.Tube1_outflow_duty > 0 and self.state.Tube1_inflow_duty == 0:
                     self.set_outflow(1, 0)
                     print(
-                        f'{TAG}: WARN: Low water level detected in tube 1: {self.state.state["Tube1_sonar_dist_mm"]}. Stopped outflow')
+                        f'{TAG}: WARN: Low water level detected in tube 1: {self.state.Tube1_sonar_dist_mm}. Stopped outflow')
 
-            elif self.state.state["Tube2_sonar_dist_mm"] < TUBE_MAX_LEVEL:
+            elif self.state.Tube2_sonar_dist_mm < TUBE_MAX_LEVEL:
                 # if outflow is active while inflow is stopped, error out
-                if self.state.state["Tube2_outflow_duty"] > 0 and self.state.state["Tube2_inflow_duty"] == 0:
+                if self.state.Tube2_outflow_duty > 0 and self.state.Tube2_inflow_duty == 0:
                     self.set_outflow(2, 0)
                     print(
-                        f'{TAG}: WARN: Low water level detected in tube 2: {self.state.state["Tube2_sonar_dist_mm"]}. Stopped outflow')
+                        f'{TAG}: WARN: Low water level detected in tube 2: {self.state.Tube2_sonar_dist_mm}. Stopped outflow')
 
             else:
                 if DEBUG:
@@ -237,9 +272,9 @@ class ClaireDevice:
 
     def update_state(self, tube=None, quick=False):
         """Get the last state of the device. If cached state is outdated, a new sensor reading is requested."""
-        # Return cached state if not outdated.
-        if not self.state.outdated and self.state.last_update >= time() - COMMUNICATION_TIMEOUT:
-            return self.state.state
+        # Return cached state if not outdated nor unstable.
+        if not self.state.dynamic and self.state.last_update >= datetime.now() - timedelta(COMMUNICATION_TIMEOUT):
+            return self.state
 
         # Ask for new state reading.
         size_buffer = self.last_printed_buf_line
@@ -256,12 +291,16 @@ class ClaireDevice:
         else:
             arg += ";"
 
+        # while busy, wait
+        while not self.ready():
+            sleep(1)
+
         self.write(arg)
 
         # Wait for the state to be received.
         total_wait = 0
         while True:
-            # Fixme: not robust
+            # Fixme: not robust looking for {
             if self.last_printed_buf_line > size_buffer and self.read_buffer[-2][0] == '{':
                 # If we received a line starting with {, we have received the new state.
                 break
@@ -284,7 +323,8 @@ class ClaireDevice:
             state["Tube2_sonar_dist_mm"] = round(self.convert_distance_to_level(state["Tube2_sonar_dist_mm"]), 1)
             self.state = ClaireState()
             self.state.set_state(state)
-            return state
+            return True
+        return False
 
     def get_last_raw_state(self):
         """Get the last raw state of the device without polling."""
@@ -299,9 +339,9 @@ class ClaireDevice:
     def print_state(self):
         """Print state of the system."""
         # seconds since state was grabbed
-        if self.state.state:
-            old = timedelta(seconds=time() - self.state.last_update)
-            print(f'{TAG} State ({old} secs old): {self.state}')
+        if self.state:
+            old = datetime.now() - self.state.last_update
+            print(f'{TAG} State ({old} old): {self.state}')
         else:
             print(f'{TAG} State: N/A')
 
@@ -338,7 +378,7 @@ class ClaireDevice:
             sleep(1)
         self.write(f"5 {tube} {self.convert_level_to_distance(level)};")
         self.busy = True
-        self.state.make_outdated()
+        self.state.make_dynamic()
 
     def set_inflow(self, tube, rate):
         """
@@ -353,7 +393,7 @@ class ClaireDevice:
             sleep(1)
         pump = (tube - 1) * 2 + 1
         self.write(f"4 {pump} {rate};")
-        self.state.make_outdated()
+        self.state.make_dynamic()
 
     def set_outflow(self, tube, rate):
         """
@@ -368,7 +408,7 @@ class ClaireDevice:
             sleep(1)
         pump = tube * 2
         self.write(f"4 {pump} {rate};")
-        self.state.make_outdated()
+        self.state.make_dynamic()
 
     @staticmethod
     def convert_distance_to_level(distance):
