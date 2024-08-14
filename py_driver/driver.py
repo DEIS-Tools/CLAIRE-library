@@ -66,8 +66,9 @@ class ClaireState:
     dynamic: Optional[bool] = None
     last_update: datetime = datetime.now()
 
-    def __init__(self):
+    def __init__(self, state):
         self.dynamic = None
+        self.set_state(state)
 
     def set_state(self, state):
         """
@@ -94,13 +95,33 @@ class ClaireState:
         """
         self.dynamic = True
 
-    @property
-    def tube1_dist(self) -> Optional[float]:
-        return self.Tube1_sonar_dist_mm
+    @staticmethod
+    def convert_distance_to_level(distance):
+        """
+        Convert sensor distance to water level.
+
+        :param distance: The distance from the sensor to the measured water surface.
+        """
+        if distance < 0:
+            raise SensorError()
+        return TUBE_MAX_LEVEL - distance
+
+    @staticmethod
+    def convert_level_to_distance(level):
+        """
+        Convert water level to sensor distance.
+
+        :param level: The water level to convert.
+        """
+        return TUBE_MAX_LEVEL - level
 
     @property
-    def tube2_dist(self) -> Optional[float]:
-        return self.Tube2_sonar_dist_mm
+    def tube1_level(self) -> Optional[float]:
+        return self.convert_distance_to_level(self.Tube1_sonar_dist_mm)
+
+    @property
+    def tube2_level(self) -> Optional[float]:
+        return self.convert_distance_to_level(self.Tube2_sonar_dist_mm)
 
 
 class ClaireDevice:
@@ -143,7 +164,6 @@ class ClaireDevice:
 
         print(f'{TAG} Device initialized. Getting initial state...')
         self.update_state()
-
 
     def alive(self):
         """Check if the device is still alive within bound."""
@@ -319,10 +339,9 @@ class ClaireDevice:
         state = self.get_last_raw_state()
         if state:
             # Convert distance to water level
-            state["Tube1_sonar_dist_mm"] = round(self.convert_distance_to_level(state["Tube1_sonar_dist_mm"]), 1)
-            state["Tube2_sonar_dist_mm"] = round(self.convert_distance_to_level(state["Tube2_sonar_dist_mm"]), 1)
-            self.state = ClaireState()
-            self.state.set_state(state)
+            state["Tube1_sonar_dist_mm"] = round(self.state.convert_distance_to_level(state["Tube1_sonar_dist_mm"]), 1)
+            state["Tube2_sonar_dist_mm"] = round(self.state.convert_distance_to_level(state["Tube2_sonar_dist_mm"]), 1)
+            self.state = ClaireState(state)
             return True
         return False
 
@@ -376,7 +395,7 @@ class ClaireDevice:
         assert 0 <= level <= TUBE_MAX_LEVEL
         while not self.ready():
             sleep(1)
-        self.write(f"5 {tube} {self.convert_level_to_distance(level)};")
+        self.write(f"5 {tube} {self.state.convert_level_to_distance(level)};")
         self.busy = True
         self.state.make_dynamic()
 
@@ -409,26 +428,6 @@ class ClaireDevice:
         pump = tube * 2
         self.write(f"4 {pump} {rate};")
         self.state.make_dynamic()
-
-    @staticmethod
-    def convert_distance_to_level(distance):
-        """
-        Convert sensor distance to water level.
-
-        :param distance: The distance from the sensor to the measured water surface.
-        """
-        if distance < 0:
-            raise SensorError()
-        return TUBE_MAX_LEVEL - distance
-
-    @staticmethod
-    def convert_level_to_distance(level):
-        """
-        Convert water level to sensor distance.
-
-        :param level: The water level to convert.
-        """
-        return TUBE_MAX_LEVEL - level
 
     def wait_until_free(self):
         """Wait until the device is free."""
