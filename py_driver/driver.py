@@ -172,6 +172,62 @@ class ClaireDevice:
     def ready(self):
         return not self.busy
 
+    def update_state(self, tube=None, quick=False):
+        """Get the last state of the device. If cached state is outdated, a new sensor reading is requested."""
+        # Return cached state if not outdated nor unstable.
+        if not self.state.dynamic and self.state.last_update >= datetime.now() - timedelta(COMMUNICATION_TIMEOUT):
+            return self.state
+
+        arg = ""
+
+        if quick:
+            arg += "2"
+        else:
+            arg += "1"
+
+        if tube:
+            arg += f" {tube};"
+        else:
+            arg += ";"
+
+        # while busy, wait
+        while not self.ready():
+            sleep(1)
+
+        # Ask for new state reading.
+        size_buffer = self.last_printed_buf_line
+
+        self.write(arg)
+        self.busy = True
+
+        # Wait for the state to be received.
+        total_wait = 0
+        while True:
+            # wait for device to be ready again after requesting state
+            while not self.ready():
+                sleep(0.1)
+
+            # todo: not robust looking for {
+            if self.last_printed_buf_line > size_buffer and self.read_buffer[-2][0] == '{':
+                # If we received a line starting with {, we have received the new state.
+                break
+
+            sleep(0.1)
+            total_wait += 0.1
+
+            if total_wait > COMMUNICATION_TIMEOUT and not self.busy:
+                raise RuntimeError("Waiting too long for state to be communicated.")
+
+        # New state retrieved, parse it.
+        state = self.get_last_raw_state()
+        if state:
+            # Convert distance to water level
+            state["Tube1_sonar_dist_mm"] = round(self.state.convert_distance_to_level(state["Tube1_sonar_dist_mm"]), 1)
+            state["Tube2_sonar_dist_mm"] = round(self.state.convert_distance_to_level(state["Tube2_sonar_dist_mm"]), 1)
+            self.state = ClaireState(state)
+            return True
+        return False
+
     def _underflow_check(self):
         TAG = "UNDERFLOW_CHECK"
         while True:
@@ -289,61 +345,6 @@ class ClaireDevice:
 
         # check if device is ready
         assert self.ready()
-
-    def update_state(self, tube=None, quick=False):
-        """Get the last state of the device. If cached state is outdated, a new sensor reading is requested."""
-        # Return cached state if not outdated nor unstable.
-        if not self.state.dynamic and self.state.last_update >= datetime.now() - timedelta(COMMUNICATION_TIMEOUT):
-            return self.state
-
-        # Ask for new state reading.
-        size_buffer = self.last_printed_buf_line
-
-        arg = ""
-
-        if quick:
-            arg += "2"
-        else:
-            arg += "1"
-
-        if tube:
-            arg += f" {tube};"
-        else:
-            arg += ";"
-
-        # while busy, wait
-        while not self.ready():
-            sleep(1)
-
-        self.write(arg)
-
-        # Wait for the state to be received.
-        total_wait = 0
-        while True:
-            # Fixme: not robust looking for {
-            if self.last_printed_buf_line > size_buffer and self.read_buffer[-2][0] == '{':
-                # If we received a line starting with {, we have received the new state.
-                break
-
-            sleep(0.1)
-            # do not incur waiting time if device is busy
-            if not self.ready():
-                continue
-
-            total_wait += 0.1
-
-            if total_wait > COMMUNICATION_TIMEOUT and not self.busy:
-                raise RuntimeError("Waiting too long for state to be communicated.")
-
-        # New state retrieved, parse it.
-        state = self.get_last_raw_state()
-        if state:
-            # Convert distance to water level
-            state["Tube1_sonar_dist_mm"] = round(self.state.convert_distance_to_level(state["Tube1_sonar_dist_mm"]), 1)
-            state["Tube2_sonar_dist_mm"] = round(self.state.convert_distance_to_level(state["Tube2_sonar_dist_mm"]), 1)
-            self.state = ClaireState(state)
-            return True
-        return False
 
     def get_last_raw_state(self):
         """Get the last raw state of the device without polling."""
