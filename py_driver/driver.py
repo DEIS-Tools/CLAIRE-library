@@ -130,6 +130,7 @@ class ClaireDevice:
     """
 
     def __init__(self, port):
+        self.e_stop = False
         self.state = None
         self.device = port
         self.busy = True  # initially unknown, therefore busy
@@ -384,6 +385,16 @@ class ClaireDevice:
         self.read_thread.join()  # Wait until read thread has been stopped.
         self.underflow_thread.join()  # Wait until read thread has been stopped.
         self.ser.close()
+
+    def e_stop(self):
+        """Emergency stop the device."""
+        self.write("3;")
+        # wait for device to be ready again after e_stopping
+        while not self.ready():
+            sleep(0.1)
+        self.update_state(quick=True)
+        assert not self.state.dynamic, "Device is still dynamic after emergency stop."
+        self.e_stop = True
 
     def set_water_level(self, tube, level):
         """
