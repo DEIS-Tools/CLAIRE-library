@@ -1,6 +1,6 @@
 import sys
 import threading
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import timedelta, datetime
 from time import sleep, time
 from typing import Optional
@@ -64,7 +64,7 @@ class ClaireState:
     Stream_inflow_duty: Optional[int] = None
     Stream_outflow_duty: Optional[int] = None
     dynamic: Optional[bool] = None
-    last_update: datetime = datetime.now()
+    last_update: datetime = datetime.now() - timedelta(hours=1)
 
     def __init__(self, state):
         self.dynamic = None
@@ -130,10 +130,9 @@ class ClaireDevice:
     """
 
     def __init__(self, port):
+        self.state = None
         self.device = port
-        self.heartbeat = time()  # last time device was alive
         self.busy = True  # initially unknown, therefore busy
-        self.state = ClaireState()
         # read timeout in secs, 1 should be sufficient
 
         # exclusive only available on posix-like systems, assumes mac-env is posix-like
@@ -163,6 +162,7 @@ class ClaireDevice:
         self.check_version()
 
         print(f'{TAG} Device initialized. Getting initial state...')
+        self.heartbeat = time()  # last time device was alive
         self.update_state()
 
     def alive(self):
