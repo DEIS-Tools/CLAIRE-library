@@ -11,10 +11,13 @@ import utils
 IMMEDIATE_OUTPUT = True
 TAG = "DRIVER:"
 CLAIRE_VERSION = "v0.1.13"
+CLAIRE_READY_SIGNAL = "CLAIRE-READY"
 TUBE_MAX_LEVEL = 900
 DEBUG = True
 COMMUNICATION_TIMEOUT = 10
-UNDERFLOW_CHECK_INTERVAL = 5
+UNDERFLOW_CHECK_INTERVAL = 1
+
+ID = 0
 
 
 class SensorError(Exception):
@@ -67,7 +70,7 @@ class ClaireState:
     last_update: datetime = datetime.now() - timedelta(hours=1)
 
     def __init__(self, state):
-        self.dynamic = None
+        self.dynamic = False  # set false initially to allow first update to succeed
         self.set_state(state)
 
     def set_state(self, state):
@@ -128,12 +131,12 @@ class ClaireDevice:
     """
     Class that represents the Claire demonstrator setup.
     """
+    state: ClaireState
 
     def __init__(self, port):
-        self.state = None
+        self.e_stop = False
         self.device = port
         self.busy = True  # initially unknown, therefore busy
-        # read timeout in secs, 1 should be sufficient
 
         # exclusive only available on posix-like systems, assumes mac-env is posix-like
         if ["linux", "darwin"].__contains__(sys.platform):
@@ -152,18 +155,19 @@ class ClaireDevice:
         self.read_thread.daemon = True
         self.read_thread.start()
 
-        self.underflow_thread = threading.Thread(target=self._underflow_check)
-        self.underflow_thread.daemon = True
-        self.underflow_thread.start()
-
         print(f'{TAG} Device connected to {port}, waiting for initialization...')
-        while not self.ready():
-            sleep(1)
+        while self.busy:
+            sleep(0.1)
         self.check_version()
 
         print(f'{TAG} Device initialized. Getting initial state...')
         self.heartbeat = time()  # last time device was alive
-        self.update_state()
+        self.update_state(initial=True)
+
+        # start underflow check delay
+        self.underflow_thread = threading.Thread(target=self._underflow_check)
+        self.underflow_thread.daemon = True
+        self.underflow_thread.start()
 
     def alive(self):
         """Check if the device is still alive within bound."""
@@ -172,10 +176,13 @@ class ClaireDevice:
     def ready(self):
         return not self.busy
 
-    def update_state(self, tube=None, quick=False):
+    def outdated(self):
+        return self.state.last_update < datetime.now() - timedelta(COMMUNICATION_TIMEOUT)
+
+    def update_state(self, tube=None, quick=False, initial=False):
         """Get the last state of the device. If cached state is outdated, a new sensor reading is requested."""
         # Return cached state if not outdated nor unstable.
-        if not self.state.dynamic and self.state.last_update >= datetime.now() - timedelta(COMMUNICATION_TIMEOUT):
+        if not initial and not self.state.dynamic and self.outdated():
             return self.state
 
         arg = ""
@@ -215,15 +222,16 @@ class ClaireDevice:
             sleep(0.1)
             total_wait += 0.1
 
-            if total_wait > COMMUNICATION_TIMEOUT and not self.busy:
-                raise RuntimeError("Waiting too long for state to be communicated.")
+            if total_wait > COMMUNICATION_TIMEOUT and self.ready():
+                raise RuntimeError(
+                    f"Waiting too long for state to be communicated. {self.busy=}, {self.ready()=}")
 
         # New state retrieved, parse it.
         state = self.get_last_raw_state()
         if state:
             # Convert distance to water level
-            state["Tube1_sonar_dist_mm"] = round(self.state.convert_distance_to_level(state["Tube1_sonar_dist_mm"]), 1)
-            state["Tube2_sonar_dist_mm"] = round(self.state.convert_distance_to_level(state["Tube2_sonar_dist_mm"]), 1)
+            state["Tube1_sonar_dist_mm"] = round(ClaireState.convert_distance_to_level(state["Tube1_sonar_dist_mm"]), 1)
+            state["Tube2_sonar_dist_mm"] = round(ClaireState.convert_distance_to_level(state["Tube2_sonar_dist_mm"]), 1)
             self.state = ClaireState(state)
             return True
         return False
@@ -232,19 +240,21 @@ class ClaireDevice:
         TAG = "UNDERFLOW_CHECK"
         while True:
             # sanity check
-            if not self.alive():
-                if DEBUG:
-                    print(f'{TAG}: Device is not alive. Waiting {UNDERFLOW_CHECK_INTERVAL} seconds.')
-                sleep(UNDERFLOW_CHECK_INTERVAL)
-                continue
             if not self.ready():
+                if self.outdated():
+                    print(f"Device is outdated. {self.state.last_update=}, {datetime.now()=}")
+                    # if last line is OK, then device is still alive, do update of state
+                    if self.read_buffer and self.read_buffer[-1] == CLAIRE_READY_SIGNAL:
+                        print(f"Device is alive. {self.state.last_update=}, {datetime.now()=}")
+                        self.busy = False
+                        self.update_state(quick=True)
                 if DEBUG:
-                    print(f'{TAG}: Device is busy. Waiting {UNDERFLOW_CHECK_INTERVAL} seconds.')
+                    print(f'{TAG}: Device is not ready. Waiting {UNDERFLOW_CHECK_INTERVAL} seconds.')
                 sleep(UNDERFLOW_CHECK_INTERVAL)
                 continue
 
             # check if water level is below 0 fixme: errors out in callee during long-running functions due to timeout reached
-            self.update_state()
+            self.update_state(quick=True)
 
             # check underflows
             if self.state.Tube1_sonar_dist_mm < TUBE_MAX_LEVEL:
@@ -264,6 +274,7 @@ class ClaireDevice:
             else:
                 if DEBUG:
                     print(f'{TAG}: No underflow detected in watchdog.')
+            sleep(UNDERFLOW_CHECK_INTERVAL)
 
     def _read_lines(self):
         """Read lines from the serial port and add to the buffer in a thread to not block the main thread."""
@@ -277,7 +288,7 @@ class ClaireDevice:
                     self.print_new_lines_buf()
                 # Check whether the new lines contain the ready signal.
                 for line in new_lines:
-                    if line == "CLAIRE-READY":
+                    if line == CLAIRE_READY_SIGNAL:
                         self.busy = False
 
             # Stop reading lines.
