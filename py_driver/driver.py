@@ -174,7 +174,7 @@ class ClaireDevice:
         return time() - self.heartbeat < COMMUNICATION_TIMEOUT
 
     def ready(self):
-        return not self.busy
+        return not self.busy and self.alive() and not self.e_stop
 
     def outdated(self):
         return self.state.last_update < datetime.now() - timedelta(COMMUNICATION_TIMEOUT)
@@ -395,6 +395,26 @@ class ClaireDevice:
         self.read_thread.join()  # Wait until read thread has been stopped.
         self.underflow_thread.join()  # Wait until read thread has been stopped.
         self.ser.close()
+
+    def e_stop(self):
+        """Emergency stop the device."""
+        self.write("3;")
+        # wait for device to be ready again after e_stopping
+        while not self.ready():
+            sleep(0.1)
+        self.update_state(quick=True)
+        assert not self.state.dynamic, "Device is still dynamic after emergency stop."
+        self.e_stop = True
+
+    def reset(self):
+        """Reset the device and clears the emergency stop."""
+        self.write("7;")
+        # wait for device to be ready again after resuming
+        while not self.ready():
+            sleep(0.1)
+        self.update_state(quick=True)
+        assert not self.state.dynamic, "Device is dynamic after resetting emergency stop."
+        self.e_stop = False
 
     def set_water_level(self, tube, level):
         """
