@@ -15,9 +15,7 @@ CLAIRE_READY_SIGNAL = "CLAIRE-READY"
 TUBE_MAX_LEVEL = 900
 DEBUG = True
 COMMUNICATION_TIMEOUT = 10
-UNDERFLOW_CHECK_INTERVAL = 1
-
-ID = 0
+UNDERFLOW_CHECK_INTERVAL = 5
 
 
 class SensorError(Exception):
@@ -239,8 +237,8 @@ class ClaireDevice:
     def _underflow_check(self):
         TAG = "UNDERFLOW_CHECK"
         while True:
-            # sanity check
             if not self.ready():
+                # do liveness check and update state if device is outdated but was ready on last communication
                 if self.outdated():
                     print(f"Device is outdated. {self.state.last_update=}, {datetime.now()=}")
                     # if last line is OK, then device is still alive, do update of state
@@ -248,13 +246,15 @@ class ClaireDevice:
                         print(f"Device is alive. {self.state.last_update=}, {datetime.now()=}")
                         self.busy = False
                         self.update_state(quick=True)
+            else:
                 if DEBUG:
                     print(f'{TAG}: Device is not ready. Waiting {UNDERFLOW_CHECK_INTERVAL} seconds.')
-                sleep(UNDERFLOW_CHECK_INTERVAL)
+                    sleep(UNDERFLOW_CHECK_INTERVAL)
                 continue
 
-            # check if water level is below 0 fixme: errors out in callee during long-running functions due to timeout reached
-            self.update_state(quick=True)
+            # update state if device is dynamic
+            if self.state.dynamic:
+                self.update_state(quick=True)
 
             # check underflows
             if self.state.Tube1_sonar_dist_mm < TUBE_MAX_LEVEL:
