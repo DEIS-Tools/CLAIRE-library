@@ -45,7 +45,7 @@ bool Claire::begin() {
     if (sensors[i].pin == -1) {
       Serial.println("ERROR: Sensor PWM pin unset for resource: " + String(sensors[i].name) + " pin: " + String(sensors[i].pin));
     } else {
-      pinMode(sensors[i].pin, INPUT);
+      pinMode(sensors[i].pin, INPUT_PULLUP);
     }
 
   }
