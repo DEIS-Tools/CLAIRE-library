@@ -264,14 +264,14 @@ class ClaireDevice:
                 self.update_state(quick=True)
 
             # check underflows
-            if self.state.Tube1_sonar_dist_mm < TUBE_MAX_LEVEL:
+            if self.state.Tube1_sonar_dist_mm > TUBE_MAX_LEVEL:
                 # if outflow is active while inflow is stopped, error out
                 if self.state.Tube1_outflow_duty > 0 and self.state.Tube1_inflow_duty == 0:
                     self.set_outflow(1, 0)
                     print(
                         f'{TAG}: WARN: Low water level detected in tube 1: {self.state.Tube1_sonar_dist_mm}. Stopped outflow')
 
-            elif self.state.Tube2_sonar_dist_mm < TUBE_MAX_LEVEL:
+            elif self.state.Tube2_sonar_dist_mm > TUBE_MAX_LEVEL:
                 # if outflow is active while inflow is stopped, error out
                 if self.state.Tube2_outflow_duty > 0 and self.state.Tube2_inflow_duty == 0:
                     self.set_outflow(2, 0)
