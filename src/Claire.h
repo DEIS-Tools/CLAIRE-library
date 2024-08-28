@@ -4,7 +4,7 @@
 #include <Arduino.h>
 #include <EEPROM.h>
 
-#define VERSION "0.1.15"
+#define VERSION "0.1.16"
 
 #define OUTPUT_GPIO_MIN 2
 #define OUTPUT_GPIO_MAX 7
