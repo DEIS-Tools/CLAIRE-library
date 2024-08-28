@@ -235,6 +235,10 @@ class ClaireDevice:
         raise SensorError(f"Failed to retrieve new state, got {state}.")
 
     def _underflow_check(self):
+        """
+        Checks whether underflow occurs, i.e., the outflow pump is pumping while water is lower than
+        lowest allowed level. This check prevents the outflow pump from pumping air.
+        """
         TAG = "UNDERFLOW_CHECK"
         while True:
             if not self.ready():
