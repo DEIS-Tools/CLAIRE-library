@@ -25,7 +25,7 @@
 #define SET_LEVEL_INTEGRAL_GAIN 5
 #define SET_LEVEL_ADD_MIN_ACTUATE_TIME 500
 #define SET_LEVEL_ADD_MAX_ACTUATE_TIME 5000
-#define SET_LEVEL_SUB_MIN_ACTUATE_TIME 1000
+#define SET_LEVEL_SUB_MIN_ACTUATE_TIME 700
 #define SET_LEVEL_SUB_MAX_ACTUATE_TIME 5000
 // allowed inaccuracy of ranging when setting level
 #define SET_LEVEL_HYSTERESIS 5
@@ -91,8 +91,8 @@ static Output** default_pumps = new Output*[PUMP_COUNT + 1] {
 
 
 namespace default_sensor_defs {
-static const auto TUBE1_HEIGHT = Sensor{ 10, "Tube1_sonar_dist_mm", 0 };
-static const auto TUBE2_HEIGHT = Sensor{ 11, "Tube2_sonar_dist_mm", 1 };
+static const auto TUBE1_HEIGHT = Sensor{ 11, "Tube1_sonar_dist_mm", 1 };
+static const auto TUBE2_HEIGHT = Sensor{ 10, "Tube2_sonar_dist_mm", 2 };
 }
 
 const int SENSOR_COUNT = 2;

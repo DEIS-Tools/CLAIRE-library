@@ -282,9 +282,9 @@ bool Claire::setLevel(Output &in, Output &out, int level) {
 
   Sensor sensor = default_sensor_defs::TUBE1_HEIGHT;
 
-  if (in.tube == 0) {
+  if (in.tube == 1) {
     sensor = default_sensor_defs::TUBE1_HEIGHT; 
-  } else if (in.tube == 1) {
+  } else if (in.tube == 2) {
     sensor = default_sensor_defs::TUBE2_HEIGHT;
   } else {
     Serial.println("ERROR: Unknown tube referenced, aborting setLevel");
