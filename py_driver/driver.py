@@ -211,14 +211,12 @@ class ClaireDevice:
             # wait for device to be ready again after requesting state
             while not self.ready():
                 sleep(0.1)
+                total_wait += 0.1
 
             # todo: not robust looking for {
             if self.last_printed_buf_line > size_buffer and self.read_buffer[-2][0] == '{':
                 # If we received a line starting with {, we have received the new state.
                 break
-
-            sleep(0.1)
-            total_wait += 0.1
 
             if total_wait > COMMUNICATION_TIMEOUT and self.ready():
                 raise RuntimeError(
