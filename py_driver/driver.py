@@ -227,9 +227,6 @@ class ClaireDevice:
         # New state retrieved, parse it.
         state = self.get_last_raw_state()
         if state:
-            # Convert distance to water level
-            state["Tube1_sonar_dist_mm"] = round(ClaireState.convert_distance_to_level(state["Tube1_sonar_dist_mm"]), 1)
-            state["Tube2_sonar_dist_mm"] = round(ClaireState.convert_distance_to_level(state["Tube2_sonar_dist_mm"]), 1)
             self.state = ClaireState(state)
             return self.state
         raise SensorError(f"Failed to retrieve new state, got {state}.")
