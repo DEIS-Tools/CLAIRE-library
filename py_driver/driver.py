@@ -241,23 +241,16 @@ class ClaireDevice:
         """
         TAG = "UNDERFLOW_CHECK"
         while True:
-            if not self.ready():
-                # do liveness check and update state if device is outdated but was ready on last communication
-                if self.outdated():
-                    print(f"Device is outdated. {self.state.last_update=}, {datetime.now()=}")
-                    # if last line is OK, then device is still alive, do update of state
-                    if self.read_buffer and self.read_buffer[-1] == CLAIRE_READY_SIGNAL:
-                        print(f"Device is alive. {self.state.last_update=}, {datetime.now()=}")
-                        self.busy = False
-                        self.update_state(quick=True)
-            else:
-                if DEBUG:
-                    print(f'{TAG}: Device is not ready. Waiting {UNDERFLOW_CHECK_INTERVAL} seconds.')
-                    sleep(UNDERFLOW_CHECK_INTERVAL)
-                continue
+            # if state is stale or dynamic, update is required
+            if self.state.dynamic or self.state.last_update < datetime.now() - timedelta(COMMUNICATION_TIMEOUT):
+                print(f"{TAG} State is stale or dynamic, requiring fresh state. {self.state.last_update=}, {datetime.now()=}")
 
-            # update state if device is dynamic
-            if self.state.dynamic:
+                # if not ready, delay and try again
+                if not self.ready():
+                    sleep(1)
+                    continue
+
+                # do quick update
                 self.update_state(quick=True)
 
             # check underflows
