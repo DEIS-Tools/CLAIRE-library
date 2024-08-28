@@ -124,6 +124,14 @@ class ClaireState:
     def tube2_level(self) -> Optional[float]:
         return self.convert_distance_to_level(self.Tube2_sonar_dist_mm)
 
+    def get_tube_level(self, tube):
+        if tube == 1:
+            return self.tube1_level
+        if tube == 2:
+            return self.tube2_level
+        else:
+            raise RuntimeError(f"Unexpected tube number {tube}.")
+
 
 class ClaireDevice:
     """
@@ -211,14 +219,12 @@ class ClaireDevice:
             # wait for device to be ready again after requesting state
             while not self.ready():
                 sleep(0.1)
+                total_wait += 0.1
 
             # todo: not robust looking for {
             if self.last_printed_buf_line > size_buffer and self.read_buffer[-2][0] == '{':
                 # If we received a line starting with {, we have received the new state.
                 break
-
-            sleep(0.1)
-            total_wait += 0.1
 
             if total_wait > COMMUNICATION_TIMEOUT and self.ready():
                 raise RuntimeError(
@@ -227,9 +233,6 @@ class ClaireDevice:
         # New state retrieved, parse it.
         state = self.get_last_raw_state()
         if state:
-            # Convert distance to water level
-            state["Tube1_sonar_dist_mm"] = round(ClaireState.convert_distance_to_level(state["Tube1_sonar_dist_mm"]), 1)
-            state["Tube2_sonar_dist_mm"] = round(ClaireState.convert_distance_to_level(state["Tube2_sonar_dist_mm"]), 1)
             self.state = ClaireState(state)
             return self.state
         raise SensorError(f"Failed to retrieve new state, got {state}.")
