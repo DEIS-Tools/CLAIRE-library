@@ -274,6 +274,11 @@ class ClaireDevice:
             else:
                 if DEBUG:
                     print(f'{TAG}: No underflow detected in watchdog.')
+
+            # Stop checking underflow.
+            if self.stopped:
+                break
+
             sleep(UNDERFLOW_CHECK_INTERVAL)
 
     def _read_lines(self):
