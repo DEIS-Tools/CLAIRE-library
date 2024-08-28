@@ -124,6 +124,14 @@ class ClaireState:
     def tube2_level(self) -> Optional[float]:
         return self.convert_distance_to_level(self.Tube2_sonar_dist_mm)
 
+    def get_tube_level(self, tube):
+        if tube == 1:
+            return self.tube1_level
+        if tube == 2:
+            return self.tube2_level
+        else:
+            raise RuntimeError(f"Unexpected tube number {tube}.")
+
 
 class ClaireDevice:
     """
